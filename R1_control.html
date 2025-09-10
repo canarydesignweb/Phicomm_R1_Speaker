@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width,initial-scale=1,user-scalable=0,maximum-scale=1,viewport-fit=cover">
+    <title>R1 Control</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/vue@2.6.14/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/element-ui@2.15.6/lib/index.js"></script>
+    <script src="https://unpkg.com/axios@0.26.0/dist/axios.min.js"></script>
+   
+</head>
+
+<body style="font-family: 'Arial', sans-serif;">
+    <div id="app" :data-theme="theme">
+        <div class="menu" style="padding: 0 30px; display: flex; justify-content: space-between; align-items: center;">
+            <el-menu mode="horizontal" style="flex: 1" @select="handleChangeMenu" :default-active="activeMenu.toString()">
+                <el-menu-item style="font-size: 20px; padding-left: 0;" index="1">
+                    <i class="el-icon-s-tools"></i>
+                    <span>Điều Khiển Loa</span>
+                </el-menu-item>
+                <el-menu-item style="font-size: 20px; padding-left: 0;" index="2">
+                    <i class="el-icon-s-operation"></i>
+                    <span>Âm Thanh</span>
+                </el-menu-item>
+            </el-menu>
+            <el-button style="width: 120px;" type="danger" @click="handleLogout">
+                <i class="el-icon-switch-button"></i>
+                Đăng Xuất
+            </el-button>
+        </div>
+        <div class="main" style="margin-top: 30px;padding: 0 30px;" :class="{hasfooter: deviceInfo.music_info}" v-show="!nextTracksPage">
+            
+            <!-- Screen Control -->
+            <template>
+                <div v-show="activeMenu ==0" style="display: none;">
+                    <div v-show="screencap.length > 1"
+                        style="margin:5px 15px;display: flex;justify-content: center;align-items: center;">
+                        <img id="screen" :src="screencap" width="100%" alt="Screen"
+                            style="max-width: 1024px;user-select: none;-webkit-user-drag: none;" />
+                    </div>
+                    <div style="height: 110px;width: 100%;position: relative;">
+                        <span id="arrow_keys"
+                            style="width: 120px;height: 100%;display: inline-block;position: absolute;left: calc(50% - 130px);">
+                            <el-button type="info" icon="el-icon-caret-top"
+                                style="position: absolute;top: 0;left: calc(50% - 20px);margin: 0;" circle
+                                @click="sendKeyevent(19)"></el-button>
+                            <el-button type="info" icon="el-icon-caret-right"
+                                style="position: absolute;top: calc(50% - 20px);right: 0;margin: 0;" circle
+                                @click="sendKeyevent(22)"></el-button>
+                            <el-button type="info" icon="el-icon-caret-bottom"
+                                style="position: absolute;bottom: 0;left: calc(50% - 20px);margin: 0;" circle
+                                @click="sendKeyevent(20)"></el-button>
+                            <el-button type="info" icon="el-icon-caret-left"
+                                style="position: absolute;top: calc(50% - 20px);left: 0;margin: 0;" circle
+                                @click="sendKeyevent(21)"></el-button>
+                        </span>
+                        <span id="function_keys"
+                            style="width: 150px;height: 100%;display: inline-block;position: absolute;right: calc(50% - 160px);">
+                            <el-button icon="el-icon-back" round
+                                style="position: absolute;top: calc(50% - 20px);left: 0;margin: 0;"
+                                @click="sendKeyevent(4)" title="Back"></el-button>
+                            <el-button type="primary" icon="el-icon-thumb" round
+                                style="position: absolute;top: calc(50% - 20px);right: 0;margin: 0;"
+                                @click="sendKeyevent(23)" title="Confirm"></el-button>
+                        </span>
+                    </div>
+                </div>
+            </template>
+            <!-- Điều Khiển Loa -->
+            <template>
+                <div v-show="activeMenu == 1">
+                    <div class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 20px">
+                            <span>
+                                DLNA :
+                            </span>
+                            <el-switch :value="DLNA" active-color="#13ce66" inactive-color="#ff4949" active-text="Mở"
+                                inactive-text="Tắt" @change="DLNAControl">
+                            </el-switch>
+                        </div>
+            
+                        <div style="display: flex; align-items: center; margin-bottom: 20px">
+                            <span>
+                                AirPlay :
+                            </span>
+                            <el-switch :value="AirPlay" active-color="#13ce66" inactive-color="#ff4949" active-text="Mở"
+                                inactive-text="Tắt" @change="AirPlayControl">
+                            </el-switch>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 20px">
+                            <span>
+                                DLNA + AirPlay :
+                            </span>
+                            <el-switch :value="DLNAAndAirPlay" active-color="#13ce66" inactive-color="#ff4949" active-text="Mở"
+                                inactive-text="Tắt" @change="DLNAAndAirPlayControl">
+                            </el-switch>
+                        </div>
+                        <span>
+                            Bluetooth :
+                        </span>
+                        <el-switch :value="Bluetooth" active-color="#13ce66" inactive-color="#ff4949" active-text="Mở"
+                            inactive-text="Tắt" @change="BluetoothControl">
+                        </el-switch>
+                    </div>
+                    <div class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <span>
+                            Đèn nền :
+                        </span>
+                        <el-switch :value="deviceInfo.music_light_enable" active-color="#13ce66"
+                            inactive-color="#ff4949" active-text="Mở" inactive-text="Tắt" @change="musicLightControl">
+                        </el-switch>
+                    </div>
+                    <div class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <span>
+                            Độ Sáng Đèn Nền : <span>{{deviceInfo.music_light_luma}}</span>
+                        </span>
+                        <el-slider v-model="deviceInfo.music_light_luma" :min="1" :max="200" :show-tooltip="false"
+                            @change="musciLightLuma"></el-slider>
+                    </div>
+                    <div class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <span>
+                            Tốc Độ Đèn : <span>{{deviceInfo.music_light_chroma}}</span>
+                        </span>
+                        <el-slider v-model="deviceInfo.music_light_chroma" :min="1" :max="100" :show-tooltip="false"
+                            @change="musicLightChroma"></el-slider>
+                    </div>
+                    <div class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <span>
+                            Hiệu ứng Đèn Nền :
+                        </span>
+                        <el-radio-group v-model="deviceInfo.music_light_mode" @change="musicLightMode"
+                            style="display: block;margin:5px;">
+                            <el-radio-button :label="0">Mặc Định</el-radio-button>
+                            <el-radio-button :label="1">Xoay vòng</el-radio-button>
+							<el-radio-button :label="4">Nháy 1</el-radio-button>
+							<el-radio-button :label="2">Nháy 2</el-radio-button>
+							<el-radio-button :label="3">Đơn sắc</el-radio-button>
+                        </el-radio-group>
+                    </div>
+                    <div class="item-title" style="margin: 14px 0; font-size: 18px;" v-if="false">
+                        <span>
+                            Network Configuration :
+                        </span>
+                        <div>
+                            <el-popconfirm title="Are you sure you want to open network configuration mode? Web control will disconnect after opening!" :hide-icon="true" @confirm="netConfig()">
+                                <el-button slot="reference" type="primary" style="margin:5px;">
+                                    Open Network Configuration
+                                </el-button>
+                            </el-popconfirm>
+                        </div>
+                    </div>
+                    <div class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <span>
+                            Bảng Điều Khiển :
+                        </span>
+                        <div>
+                            <el-popconfirm title="Confirm restart app" :hide-icon="true"
+                                @confirm="restartApp('com.phicomm.speaker.device')">
+                                <el-button slot="reference" type="danger" style="margin:5px;">
+                                    Xoá Apk Đã Cài
+                                </el-button>
+                            </el-popconfirm>
+                            <el-popconfirm title="Confirm restart speaker" :hide-icon="true" @confirm="reboot">
+                                <el-button slot="reference" type="danger" style="margin:5px;">
+                                    Khởi Động Loa
+                                </el-button>
+                            </el-popconfirm>
+                            <el-button type="danger" style="margin:5px;"
+                                @click="restartdialogVisible = true, getListPackages()">
+                                Bật/tắt Phần mềm
+                            </el-button>
+                            <el-dialog :title="listPackagesIndex == null ? 'Restart Software' : listPackagesIndex"
+                                :visible.sync="restartdialogVisible" width="375px" center :modal="false">
+                                <el-radio-group v-model="listPackagesIndex"
+                                    style="height: 400px;width: 100%;overflow-y: scroll;overflow-x: hidden;">
+                                    <el-radio v-for="(item ,index) of listPackages" :key="'listPackages-' + index"
+                                        :label="item">
+                                        {{item}}
+                                    </el-radio>
+                                </el-radio-group>
+                                <span slot="footer" class="dialog-footer">
+                                    <el-button type="info" @click="restartdialogVisible = false, stopApp()">Tắt
+                                    </el-button>
+                                    <el-button type="success" @click="restartdialogVisible = false, startApp()">Bật
+                                    </el-button>
+                                    <el-button @click="restartdialogVisible = false">Huỷ</el-button>
+                                </span>
+                            </el-dialog>
+                            <br>
+                            <el-button type="primary" @click="light(true)" style="margin:5px 0 5px 5px;">
+                                Bật Đèn Viền
+                            </el-button>
+                            <el-button type="primary" @click="light()" style="margin:5px 5px 5px 0;">
+                                Tắt Đèn Viền
+                            </el-button>
+                            <el-popconfirm title="Clear all alarms and restart Peninsula app" :hide-icon="true" @confirm="clear()">
+                                <el-button slot="reference" type="danger" style="margin:5px;">
+                                    Tắt Tiếng Trung
+                                </el-button>
+                            </el-popconfirm>
+                            <el-popover placement="top" width="160" v-model="shellVisible">
+                                <textarea v-model="shellStr" cols="30" rows="3" style="width: 100%;"></textarea>
+                                <div style="text-align: right; margin: 0">
+                                    <el-button size="mini" type="text" @click="shellVisible = false">Cancel</el-button>
+                                    <el-button type="primary" size="mini" @click="shellVisible = false, executeShell()">
+                                        Execute</el-button>
+                                </div>
+                                <el-button slot="reference" title="F12 console has output results">Nhập Lệnh</el-button>
+                            </el-popover>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <!-- Âm Thanh -->
+            <template>
+                <div v-show="activeMenu == 2">
+                    <div id="volume" class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <span>
+                            Âm Lượng : <span>{{deviceInfo.vol}}</span> / 15
+                        </span>
+                        <el-slider v-model="deviceInfo.vol" :max="15" :show-tooltip="false" @change="setVolume">
+                        </el-slider>
+                    </div>
+                    <div id="loudness" class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <span>
+                            Độ lớn âm thanh : <span>{{soundEffect.loudness.Current_Gain / 100}}</span> dB
+                        </span>
+                        <span style="float: right;">
+                            <el-switch :value="soundEffect.loudness.sound_effects_loudness_enable"
+                                active-color="#13ce66" inactive-color="#ff4949" active-text="Bật" inactive-text="Tắt"
+                                @change="btnLoudness">
+                            </el-switch>
+                        </span>
+                        <el-slider v-model="soundEffect.loudness.Current_Gain" :step="100" :min="-3000" :max="3000"
+                            :show-tooltip="false" :disabled="!soundEffect.loudness.Loudness_Enable"
+                            @change="setLoudness"></el-slider>
+                    </div>
+                    <div id="bass" class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <span>
+                            Tăng cường bass : <span>{{soundEffect.bass.Current_Strength / 10}}</span> %
+                        </span>
+                        <span style="float: right;">
+                            <el-switch :value="soundEffect.bass.sound_effects_bass_enable" active-color="#13ce66"
+                                inactive-color="#ff4949" active-text="Bật" inactive-text="Tắt" @change="btnBass">
+                            </el-switch>
+                        </span>
+                        <el-slider v-model="soundEffect.bass.Current_Strength" :step="100" :max="1000"
+                            :show-tooltip="false" :disabled="!soundEffect.bass.Bass_Enable" @change="setBass">
+                        </el-slider>
+                    </div>
+                    <div v-for="(item, index) in soundEffect.eq.Bands.list" :key="'eq' + index" :id="'eq' + index"
+                        class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <span>
+                            <el-tooltip placement="top-start">
+                                <div slot="content">Frequency : {{item.Frequency}}</div>
+                                <span>
+
+                                    {{ eqBandListName[index] }} : </span>
+                            </el-tooltip>
+                            <span>{{item.BandLevel / 100}}</span> dB
+                        </span>
+                        <span style="float: right;" v-if="index == 0">
+                            <el-switch :value="soundEffect.eq.sound_effects_eq_enable" active-color="#13ce66"
+                                inactive-color="#ff4949" active-text="Bật" inactive-text="Tắt" @change="btnEq">
+                            </el-switch>
+                        </span>
+                        <el-slider v-model="item.BandLevel" :step="100" :min="-1500" :max="1500" :show-tooltip="false"
+                            :disabled="!soundEffect.eq.Eq_Enable" @change="setEq(index)"></el-slider>
+                    </div>
+                    <el-row class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <el-button type="danger" style="margin:5px;" v-for="(item, index) in soundEffect.eq.Preset_list"
+                            :key="'Preset_list' + index " @click="setEqMode(index)">
+                            {{eqPresetListName[item.Name]}}
+                        </el-button>
+                        <el-button v-for="(item, index) in myEqMode" :key="'myEqMode' + index" type="danger"
+                            style="margin:5px;" @click="setMyEqMode(index)">
+                            {{item.Name}}
+                        </el-button>
+                        <el-button v-for="(item, index) in myEqMode2" v-show="!isDelEqMode" :key="'myEqMode2' + index"
+                            type="danger" style="margin:5px;" @click="setMyEqMode2(index)">
+                            {{item.Name}}
+                        </el-button>
+                        <el-popconfirm v-for="(item, index) in myEqMode2" v-show="isDelEqMode"
+                            :key="'myEqMode2b' + index" :title="'Confirm delete : '+ item.Name + ' ?'" :hide-icon="true"
+                            @confirm="delEqMode(item)">
+                            <el-button slot="reference" type="warning" style="margin:5px;">
+                                {{item.Name}}
+                            </el-button>
+                        </el-popconfirm>
+                    </el-row>
+                    <el-row class="item-title" style="margin: 14px 0; font-size: 18px;">
+                        <el-button type="primary" style="margin:5px;" @click="dialogVisible = true">
+                            Lưu Cài Đặt
+                        </el-button>
+                        <el-switch :value="!isDelEqMode" v-show="myEqMode2.length > 0" active-color="#13ce66"
+                            inactive-color="#ff4949" active-text="Mặc Định" inactive-text="Xoá Cài Đặt"
+                            @change="isDelEqMode = !isDelEqMode">
+                        </el-switch>
+                        <el-dialog :visible.sync="dialogVisible" width="250px" center :modal="false">
+                            <el-input v-model="eqModeName" placeholder="Give the current audio settings a name"></el-input>
+                            <span slot="footer">
+                                <el-button @click="dialogVisible = false">Hủy</el-button>
+                                <el-button type="primary" @click="addEqMode">Xác nhận</el-button>
+                            </span>
+                        </el-dialog>
+                    </el-row>
+                </div>
+            </template>
+        </div>
+        <div class="footer" style="padding: 16px; text-align: center; border-top: 1px solid #eee">
+            <span style="font-size: 24px; color: #000;">
+                Contact Facebook <a href="https://www.facebook.com/HaidangMobilee" target="_blank">HaidangMobile</a>
+            </span>
+        </div>
+    </div>
+</body>
+<script>
+      // Get hostname and port from localStorage or prompt user
+    let hostname = localStorage.getItem('hostname');
+    let port = localStorage.getItem('port');
+    
+    // If hostname or port is not stored, prompt the user
+    if (!hostname || !port) {
+        hostname = prompt('IP Loa:', '');
+        port = prompt('Port:', '8080');
+        // Store the values in localStorage for future use
+        if (hostname && port) {
+            localStorage.setItem('hostname', hostname);
+            localStorage.setItem('port', port);
+        } else {
+            // Use default values if user cancels the prompts
+            hostname = hostname;
+            port = port;
+        }
+    }
+    
+    // NetEase user uid
+    let netEaseUid = 31097058
+    // Default title
+    let defaultTitle = 'R1 Speaker Control'
+    // Axios request baseURL
+    let baseURL = 'https://music-api.heheda.top'
+
+    function apis (a, b, c, d) {
+        return {
+            //Get speaker status
+            info: { type: 'get_info' },
+            //Turn on loudness switch
+            loudnessEnable: { type: 'set_loudness_enable', enable: a },
+            //Turn on bass switch
+            bassEnable: { type: 'set_bass_enable', enable: a },
+            //Turn on EQ switch
+            eqEnable: { type: 'set_eq_enable', enable: a },
+            //Get sound effect data
+            eqConfig: { type: 'get_eq_config' },
+            //Set volume
+            vol: { type: 'set_vol', vol: a },
+            //Set loudness
+            loudnessGain: { type: 'set_loudness_gain', gain: a },
+            //Set bass
+            bassStrength: { type: 'set_bass_strength', strength: a },
+            //Set sound effect
+            eqBandlevel: { type: 'set_eq_bandlevel', band: a, level: b },
+            //Select sound effect mode
+            eqPreset: { type: 'set_eq_preset', preset: a },
+            //Bluetooth control; Open: ('Open Bluetooth', 1) ; Close: ('Close Bluetooth', 2)
+            bluetooth: { type: 'send_message', type_id: a, what: 64, arg1: b, arg2: -1 },
+            //Ambient light; Open: ('Open ambient light', 1); Close: ('Close ambient light', 0);
+            musicLight: { type: 'send_message', type_id: a, what: 4, arg1: 64, arg2: b },
+            //Set ambient light brightness
+            musciLightLuma: { type: 'send_message', type_id: 'Set ambient light brightness', what: 4, arg1: 65, arg2: a },
+            //Set color gradient speed
+            musicLightChroma: { type: 'send_message', type_id: 'Set color gradient speed', what: 4, arg1: 66, arg2: a },
+            //Ambient effect
+            musicLightMode: { type: 'send_message', type_id: a, what: 4, arg1: 68, arg2: b },
+            //Screenshot Start: 'start_screencap'; Stop: 'stop_screencap'
+            screen: { type: a },
+            //Send key events/screen swipe/screen click
+            keyEvent: { type: 'input', input: a },
+            //Execute shell command
+            shell: { type_id: a, type: 'shell', shell: b },
+            //Open network connection
+            netConfig: { type: 'send_message', what: 262144, arg1: 1 },
+            //Play
+            play: { type: 'send_message', what: 4, arg1: 3, arg2: -1, obj: true },
+            //Pause
+            pause: { type: 'send_message', what: 4, arg1: 2, arg2: -1, obj: true },
+            //Previous song
+            prev: { type: 'prev' },
+            //Next song
+            next: { type: 'next' },
+            //Set play mode
+            setPlayMode: { type: 'set_play_mode', mode: a },
+            //Get playlist
+            list: { type: 'list' },
+            //Play specific song
+            playMusic: { type: 'play', type_id: 'Play specific song', index: a },
+            //Set DLNA
+            setDLNA: { "open": a, "type_id": "Prohibit DLNA service from starting", "type": "Set_DLNA_Open" },
+            //Set AirPlay
+            setAirPlay: {"open": a,"type_id":"Allow AirPlay service to start","type":"Set_AirPlay_Open"},
+            //Set DLNA + AirPlay
+            setDLNAAndAirPlay: {"open": a,"type_id":"Turn off Bluetooth, DLNA, and AirPlay always-on services","type":"Set_Service_Normally_Open"}
+        }
+    }
+
+    function bandaoApis (a, b, c, d) {
+        return {
+            //Collect
+            collect: { type: 'send_message', what: 65536, arg1: 0, arg2: 6 },
+            //Cancel collection
+            cancelCollect: { type: 'send_message', what: 65536, arg1: 0, arg2: 7 },
+            // Play
+            playMenu: { type: 'sendMsg', what: 4, arg1: 1, arg2: -1, dataType: 'String', data: a },
+        }
+    }
+    // css
+    let myStyle = `
+
+  `
+
+    function getEl (str) {
+        return document.querySelectorAll(str);
+    }
+
+    function DelEl (el) {
+        el.parentNode.removeChild(el);
+    }
+    // Load UI file
+    function loadCss (url) {
+        let link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = url;
+        document.getElementsByTagName('head')[0].appendChild(link);
+    }
+
+    function addCss (style) {
+        let styleNode = document.createElement('style');
+        styleNode.type = "text/css";
+        styleNode.innerHTML = style;
+        document.getElementsByTagName('head')[0].appendChild(styleNode);
+    }
+
+    function addMeta () {
+        let M = document.createElement('meta');
+        M.content = 'width=device-width,initial-scale=1,user-scalable=0,maximum-scale=1,viewport-fit=cover';
+        M.name = 'viewport';
+        document.getElementsByTagName('head')[0].appendChild(M);
+    }
+    // Extend date
+    Date.prototype.Format = function (fmt) {
+        let o = {
+            "M+": this.getMonth() + 1, //month
+            "d+": this.getDate(), //day
+            "h+": this.getHours(), //hour
+            "m+": this.getMinutes(), //minute
+            "s+": this.getSeconds(), //second
+            "q+": Math.floor((this.getMonth() + 3) / 3), //quarter
+            "S": this.getMilliseconds() //millisecond
+        }
+        if (/(y+)/.test(fmt)) {
+            fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length))
+        }
+        for (let k in o) {
+            if (new RegExp("(" + k + ")").test(fmt)) {
+                fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)))
+            }
+        }
+
+        return fmt
+    }
+    Date.prototype.totalDay = function (fmt) { //Convert timestamp to time from today
+        let d = 24 * 60 * 60 * 1000; // Milliseconds in a day 24 * 60 * 60 * 1000
+        let h = 60 * 60 * 1000; // Milliseconds in an hour 60 * 60 * 1000
+        let m = 60 * 1000; // Milliseconds in a minute 60 * 1000
+        let t = this.getTime()
+        let o = {
+            "d+": parseInt(t / d), //day
+            "h+": parseInt(t % d / h), //hour
+            "m+": parseInt(t % h / m), //minute
+            "s+": parseInt(t % m / 1000), //second
+        }
+        for (let k in o) {
+            if (new RegExp("(" + k + ")").test(fmt)) {
+                fmt = fmt.replace(RegExp.$1, (RegExp.$1.length <= 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)))
+            }
+        }
+
+        return fmt
+    }
+
+    function disableScrolling () {
+        document.documentElement.style.setProperty('--html-overflow-y', 'hidden');
+    }
+
+    function enableScrolling () {
+        document.documentElement.style.setProperty('--html-overflow-y', 'overlay');
+    }
+
+
+    //`````````````````jsonp`````````````````````````````
+    var count = 0;
+
+    function noop () { }
+
+    function jsonp (url, opts, fn) {
+        if ('function' == typeof opts) {
+            fn = opts;
+            opts = {};
+        }
+        if (!opts) opts = {};
+
+        var prefix = opts.prefix || '__jp';
+
+        // use the callback name that was passed if one was provided.
+        // otherwise generate a unique name by incrementing our counter.
+        var id = opts.name || (prefix + (count++));
+
+        var param = opts.param || 'callback';
+        var timeout = null != opts.timeout ? opts.timeout : 60000;
+        var enc = encodeURIComponent;
+        var target = document.getElementsByTagName('script')[0] || document.head;
+        var script;
+        var timer;
+
+
+        if (timeout) {
+            timer = setTimeout(function () {
+                cleanup();
+                if (fn) fn(new Error('Timeout'));
+            }, timeout);
+        }
+
+        function cleanup () {
+            if (script.parentNode) script.parentNode.removeChild(script);
+            window[id] = noop;
+            if (timer) clearTimeout(timer);
+        }
+
+        function cancel () {
+            if (window[id]) {
+                cleanup();
+            }
+        }
+
+        window[id] = function (data) {
+            cleanup();
+            if (fn) fn(null, data);
+        };
+        // add qs component
+        url += (~url.indexOf('?') ? '&' : '?') + param + '=' + enc(id);
+        url = url.replace('?&', '?');
+        // create script
+        script = document.createElement('script');
+        script.src = url;
+        target.parentNode.insertBefore(script, target);
+
+        return cancel;
+    }
+
+    //``````````````````````````````````````````````
+
+
+    function vueBox () {
+        let string = `
+  <div id="app">
+  </div>
+        `
+        let vueBox = document.createElement('div');
+        vueBox.innerHTML = string
+        // getEl('body')[0].appendChild(vueBox);
+        newVue()
+    }
+
+    function newVue () {
+        new Vue({
+            el: '#app',
+            data: function () {
+                return {
+                    Socket: null,
+                    drawer: false,
+                    activeMenu: -1,
+                    activeList: 1001,
+                    setIntervalWesocketPush: null,
+                    getSocketData: null,
+                    deviceInfo: { //Setting information
+                        device_state: 0, // Bluetooth on: 3,
+                        device_udid: "",
+                        music_light_chroma: 0,
+                        music_light_enable: false,
+                        music_light_luma: 0,
+                        music_light_mode: 0,
+                        music_source: "kuwo",
+                        music_info: null
+                        /* {
+                        artist: "",
+                        duration: 0,
+                        id: "",
+                        itemtype: 0,
+                        position: 0,
+                        state: 0,
+                        timestamp: "",
+                        title: "",
+                        }
+                        */
+                        ,
+                        play_mode: 1,
+                        play_state: false,
+                        play_type: 0,
+                        ttsModelType: "SWEET",
+                        u_ver: 1000,
+                        ver: 1822,
+                        vol: 2,
+                    },
+                    soundEffect: { // Sound effects
+                        loudness: { //Loudness
+                            Current_Gain: 0,
+                            Loudness_Enable: false,
+                            sound_effects_loudness_enable: false
+                        },
+                        bass: { //Bass enhancement
+                            Current_Strength: 0,
+                            Bass_Enable: false,
+                            sound_effects_bass_enable: false
+                        },
+                        eq: { //EQ adjustment
+                            Current_Preset: 0,
+                            Eq_Enable: false,
+                            sound_effects_eq_enable: false,
+                            Bands: {
+                                list: [
+                                    { Band: 0, BandLevel: 300, Frequency: 60000 },
+                                    { Band: 1, BandLevel: 0, Frequency: 230000 },
+                                    { Band: 2, BandLevel: 0, Frequency: 910000 },
+                                    { Band: 3, BandLevel: 0, Frequency: 3600000 },
+                                    { Band: 4, BandLevel: 300, Frequency: 14000000 }
+                                ],
+                                maxBandLevel: 1500,
+                                minBandLevel: -1500
+                            },
+                            Preset_list: [
+                                { Preset: 0, Name: "Normal" },
+                                { Preset: 1, Name: "Classical" },
+                                { Preset: 2, Name: "Dance" },
+                                { Preset: 3, Name: "Flat" },
+                                { Preset: 4, Name: "Folk" },
+                                { Preset: 5, Name: "Heavy Metal" },
+                                { Preset: 6, Name: "Hip Hop" },
+                                { Preset: 7, Name: "Jazz" },
+                                { Preset: 8, Name: "Pop" },
+                                { Preset: 9, Name: "Rock" }
+                            ]
+                        }
+                    },
+                    eqBandListName: ["Thấp", "Trung bình thấp", "Trung bình", "Trung bình cao", "Cao"],
+                    eqPresetListName: {
+                        "Normal": "Normal",
+                        "Classical": "Classical",
+                        "Dance": "Dance",
+                        "Flat": "Flat",
+                        "Folk": "Folk",
+                        "Heavy Metal": "Heavy Metal",
+                        "Hip Hop": "Hip Hop",
+                        "Jazz": "Jazz",
+                        "Pop": "Pop",
+                        "Rock": "Rock"
+                    },
+                    myEqMode: [{
+                        Name: 'Electronic',
+                        BandList: [
+                            { Band: 0, BandLevel: 900 },
+                            { Band: 1, BandLevel: 1300 },
+                            { Band: 2, BandLevel: 1100 },
+                            { Band: 3, BandLevel: 900 },
+                            { Band: 4, BandLevel: 1400 }
+                        ]
+                    }],
+                    myEqMode2: [],
+                    eqModeName: '',
+                    //Ambient effects
+                    musicLightModes: ['Switch to official ambient effect', 'Switch to colorful rotation effect', 'Switch to colorful ambient effect', 'Switch to colorful rotation effect 1'],
+                    screen: null,
+                    screencap: '',
+                    reader: null,
+                    img: null,
+                    startx: -1,
+                    starty: -1,
+                    dialogVisible: false,
+                    restartdialogVisible: false, //Restart software interface display
+                    listPackages: [],
+                    listPackagesIndex: 'com.phicomm.speaker.device',
+                    shellVisible: false,
+                    shellStr: '',
+                    isDelEqMode: false, //Whether in delete sound effect mode
+                    systemInfo: {
+                        MemTotal: 0,
+                        MemFree: 0,
+                        Buffers: 0,
+                        Cached: 0,
+                        SwapCached: 0,
+                        Active: 0,
+                        Inactive: 0,
+                        "Active(anon)": 0,
+                        "Inactive(anon)": 0,
+                        "Active(file)": 0,
+                        "Inactive(file)": 0,
+                        Unevictable: 0,
+                        Mlocked: 0,
+                        HighTotal: 0,
+                        HighFree: 0,
+                        LowTotal: 0,
+                        LowFree: 0,
+                        SwapTotal: 0,
+                        SwapFree: 0,
+                        Dirty: 0,
+                        Writeback: 0,
+                        AnonPages: 0,
+                        Mapped: 0,
+                        Shmem: 0,
+                        Slab: 0,
+                        SReclaimable: 0,
+                        SUnreclaim: 0,
+                        KernelStack: 0,
+                        PageTables: 0,
+                        NFS_Unstable: 0,
+                        Bounce: 0,
+                        WritebackTmp: 0,
+                        CommitLimit: 0,
+                        Committed_AS: 0,
+                        VmallocTotal: 0,
+                        VmallocUsed: 0,
+                        VmallocChunk: 0,
+                        intr: '',
+                        ctxt: '',
+                        btime: '',
+                        processes: '',
+                        procs_running: '',
+                        procs_blocked: '',
+                        softirq: '',
+                        incremental: 0,
+                    },
+                    timerSystemInfo: null,// System info update timer
+                    playModes: ['Shuffle', 'Sequential', 'Single Repeat'],
+                    list: {
+                        playIndex: 0,
+                        playMode: 0,
+                        playState: 0,
+                        playList: [
+                            /*
+                            {
+                              album: "", Album
+                              artist: "", Artist
+                              itemId: "",
+                              itemType: 0,
+                              title: "", Song name
+                              url: "", Song mp3 address
+                              dt: "", Song duration (milliseconds)
+                            }
+                            */
+                        ]
+                    },
+                    songInfo: {
+                        /*
+                        artist: "Zheng Yu"
+                        id: "MUSIC_180216407"
+                        link: "http://www.kuwo.cn/yinyue/180216407"
+                        lrc: "[00:02.29]How to Sigh - Zheng Yu\r\n[00:04.58]Lyrics: Listen Dream\r\n[00:06.87]"
+                        name: "How to Sigh"
+                        */
+                    },
+                    nextTracksPage: false,
+
+                    // Currently viewing playlist songs
+                    playlistCurrent: [],
+                    playlistCurrentPage: false,
+
+                    isMouseWheel: false,
+                    isMouseWheelTimer: null,
+                    showLike: false,
+                    theme: 'light',
+                    netEaseBangMenu: [],
+                    myMusicMenu: [],
+                    netEaseLId: null, // NetEase playlist id
+                    currentMusicProgress: 0, //Progress bar change record
+                    cmp: 0, // Music progress bar drag/click position
+                    collectList: [{ // Collected NetEase playlists
+                        name: 'Local Favorites Playlist',
+                        list: []
+                    }],
+                    delCollectListMode: false, //Delete collection mode
+                    isLoading: { // Whether loading
+                        playMusicNavmenu: false,
+                    }
+                }
+            },
+            mounted () {
+                console.log(this.systemInfo);
+                this.initSocket();
+                this.screenInit()
+                this.updateEqMode()
+                this.setPageTitle(defaultTitle)
+                this.theme = localStorage.getItem('theme') || 'light'
+                this.collectList = JSON.parse(localStorage.getItem('collectList')) || this.collectList
+                //Set default startup page
+                this.handleChangeMenu(1)
+            },
+            destroyed () {
+                //Remove listener
+                window.removeEventListener('onmessageWS', this.getSocketData);
+            },
+            methods: {
+                handleLogout () {
+                    localStorage.removeItem('hostname');
+                    localStorage.removeItem('port');
+                    location.reload();
+                },
+                handleChangeMenu (index) {
+                    this.drawer = false
+                    if (index == 100) {
+                        this.toggleTheme()
+                        return
+                    }
+
+                    this.nextTracksPage = false
+                    this.activeMenu = index
+                    this.stopScreen()
+                    clearInterval(this.timerSystemInfo)
+                    if (index == 0) {
+                        this.handleChangeList(this.activeList)
+                    } else if (index == 1) { // 1 for screen control
+                        this.startScreen()
+                    } else if (index == 2) { //2 for sound effect control
+                        this.soundEffectInit()
+                    } else if (index == 3) { //3 speaker control
+                        this.getSystemInfo()
+                        this.timerSystemInfo = setInterval(e => {
+                            this.getSystemInfo()
+                        }, 3000)
+                    }
+                },
+                handleChangeList (index) {
+                    this.activeList = index
+                    if (index == 1001) {
+                        this.getNetEaseBangMenu()
+                    } else if (index == 1002) {
+                        this.getMyMusicMenu()
+                    }
+                },
+                setPageTitle (str) {
+                    document.title = str
+                },
+                initSocket () {
+                    this.createSocket()
+                    // Create receive message function
+                    this.getSocketData = e => {
+                        const data = e && e.detail.data
+                        if ((typeof data) == 'string') {
+                            let jData = JSON.parse(data)
+                            if (jData.code != 200) {
+                                // console.log('code : ' + jData.code)
+                                console.error(jData)
+                                return;
+                            } else if (jData.type == 'get_info') {
+                                //Update device info
+                                this.deviceInfo = JSON.parse(jData.data)
+                            } else if (jData.type == 'get_eq_config') {
+                                // console.log('get_eq_config')
+                                this.soundEffect = JSON.parse(jData.data)
+                            } else if (jData.type == 'send_message') {
+
+                            } else if (jData.type == 'stop_screencap' || jData.type == 'start_screencap') {
+
+                            } else if (jData.type == 'input') {
+
+                            } else if (jData.type == 'shell' && jData.type_id == 'query') {
+                                this.setSystemInfo(jData.data)
+                            } else if (jData.type == 'shell' && jData.type_id == 'packages') {
+                                this.setListPackages(jData.data)
+                            } else if (jData.type == 'shell' && jData.type_id == 'myshell') {
+                                let time = new Date().Format('hh:mm:ss')
+                                console.group('Shell execution result' + time)
+                                console.dir(jData)
+                                console.log('%c data : \n ' + jData.data + ' ', 'background:#000;color:#fff')
+                                console.groupEnd('Shell execution result' + time)
+
+                            } else if (jData.type == 'list') {
+                                let l = JSON.parse(jData.data)
+                                // console.log(l)
+                                l.playList.map(el => {
+                                    let [_id, _dt] = el.itemId.split(',')
+                                    el.itemId = _id
+                                    el.dt = _dt
+                                });
+                                this.list = l
+                            }
+                            else {
+                                // console.log(jData)
+                                // console.log(JSON.parse(jData.data))
+                            }
+                        } else if ((typeof data) == 'object') {
+                            this.updateScreencap(data)
+                        } else {
+                            // console.log(data)
+                        }
+                    }
+                    //Register event listener
+                    window.addEventListener('onmessageWS', this.getSocketData)
+                },
+                createSocket () {
+                    this.Socket && this.Socket.close()
+                    if (!this.Socket) {
+                        console.log('Establishing websocket connection')
+                        this.Socket = new WebSocket('ws://' + hostname + ':' + port);
+                        //Send heartbeat
+                        this.Socket.onopen = this.onopenWS
+                        //Receive message
+                        this.Socket.onmessage = this.onmessageWS
+                        //Reconnect on connection failure
+                        this.Socket.onerror = this.onerrorWS
+                        //Reconnect on disconnect
+                        this.Socket.onclose = this.oncloseWS
+                    } else {
+                        console.log('Websocket already connected')
+                    }
+                },
+                onopenWS (e) {
+                    // Send heartbeat
+                    clearInterval(this.setIntervalWesocketPush)
+                    let data = null
+                    data = JSON.stringify(apis()['info'])
+                    this.Socket.send(data);
+                    this.setIntervalWesocketPush = setInterval(() => {
+                        this.Socket.send(data);
+                    }, 950)
+                },
+                onmessageWS (e) {
+                    window.dispatchEvent(new CustomEvent('onmessageWS', {
+                        detail: {
+                            data: e.data
+                        }
+                    }))
+                },
+                // Reconnect on disconnect
+                onerrorWS (e) {
+                    this.Socket.close()
+                    clearInterval(this.setIntervalWesocketPush)
+                    console.log(' ,Connection failed, reconnecting')
+                    if (this.Socket.readyState !== 3) {
+                        this.Socket = null
+                        this.createSocket()
+                    }
+                },
+                oncloseWS (e) {
+                    console.log('Websocket disconnected: ' + e.code + ' ' + e.reason + ' ' + e.wasClean)
+                    clearInterval(this.setIntervalWesocketPush)
+                    console.log('Websocket disconnected....trying to reconnect')
+                    if (this.Socket.readyState !== 2) {
+                        this.Socket = null
+                        this.createSocket()
+                    }
+                },
+                //Handle waiting for resend when connection not established
+                //message data to be sent
+                connecting (message) {
+                    let timeout = setTimeout(() => {
+                        if (this.Socket.readyState === 0) {
+                            this.connecting(message)
+                        } else {
+                            this.Socket.send(JSON.stringify(message))
+                        }
+                        clearTimeout(timeout)
+                    }, 1000)
+                },
+                sendWSPush (message) {
+                    if (this.Socket !== null && this.Socket.readyState === 3) {
+                        this.Socket.close()
+                        this.createSocket()
+                    } else if (this.Socket.readyState === 1) {
+                        this.Socket.send(JSON.stringify(message))
+                    } else if (this.Socket.readyState === 0) {
+                        this.connecting(message)
+                    }
+                },
+                //Open sound effect switch, get sound effect data
+                soundEffectInit () {
+                    //Get sound effect data
+                    this.sendWSPush(apis()['eqConfig']);
+                },
+                //Loudness switch
+                btnLoudness (val) {
+                    this.sendWSPush(apis(val)['loudnessEnable'])
+                    this.soundEffectInit()
+                },
+                btnBass (val) {
+                    this.sendWSPush(apis(val)['bassEnable'])
+                    this.soundEffectInit()
+                },
+                btnEq (val) {
+                    this.sendWSPush(apis(val)['eqEnable'])
+                    this.soundEffectInit()
+                },
+                //Set volume
+                setVolume (vol) {
+                    if (vol != 0) {
+                        vol = vol || this.deviceInfo.vol
+                    }
+                    this.sendWSPush(apis(vol)['vol']);
+                    this.deviceInfo.vol = vol
+                },
+                //Set loudness
+                setLoudness () {
+                    this.sendWSPush(apis(this.soundEffect.loudness.Current_Gain)['loudnessGain'])
+                },
+                //Set bass
+                setBass () {
+                    this.sendWSPush(apis(this.soundEffect.bass.Current_Strength)['bassStrength'])
+                },
+                //Set sound effect
+                setEq (index, level = null) {
+                    this.sendWSPush(apis(index, level || this.soundEffect.eq.Bands.list[index].BandLevel)['eqBandlevel'])
+                },
+                //Select sound effect mode
+                setEqMode (index) {
+                    // console.log(index)
+                    this.sendWSPush(apis(this.soundEffect.eq.Preset_list[index].Preset)['eqPreset'])
+                    this.soundEffectInit()
+                },
+                // Set custom sound effect mode
+                async setMyEqMode (index) {
+                    for (let item of this.myEqMode[index].BandList) {
+                        await this.setEq(item.Band, item.BandLevel)
+                    }
+                    await this.soundEffectInit()
+                },
+                //User defined mode
+                async setMyEqMode2 (index) {
+                    for (let item of this.myEqMode2[index].BandList) {
+                        await this.setEq(item.Band, item.BandLevel)
+                    }
+                    await this.soundEffectInit()
+                },
+                BluetoothControl (val) {
+                    if (val) {
+                        this.BluetoothOpen()
+                    } else {
+                        this.BluetoothClose()
+                    }
+                },
+                BluetoothOpen () {
+                    this.sendWSPush(apis('Open Bluetooth', 1)['bluetooth'])
+                },
+                BluetoothClose () {
+                    this.sendWSPush(apis('Close Bluetooth', 2)['bluetooth'])
+                },
+                AirPlayControl (val) {
+                    if (val) {
+                        this.AirPlayOpen()
+                    } else {
+                        this.AirPlayClose()
+                    }
+                },
+                DLNAControl (val) {
+                    if (val) {
+                        this.DLNAOpen()
+                    } else {
+                        this.DLNAClose()
+                    }
+                },
+                DLNAAndAirPlayControl (val) {
+                    if (val) {
+                        this.DLNAAndAirPlayOpen()
+                    } else {
+                        this.DLNAAndAirPlayClose()
+                    }
+                },
+                AirPlayOpen () {
+                    this.sendWSPush(apis(true)['setAirPlay'])
+                },
+                AirPlayClose () {
+                    this.sendWSPush(apis(false)['setAirPlay'])
+                },
+                DLNAOpen () {
+                    this.sendWSPush(apis(true)['setDLNA'])
+                },
+                DLNAClose () {
+                    this.sendWSPush(apis(false)['setDLNA'])
+                },
+                DLNAAndAirPlayOpen () {
+                    this.AirPlayOpen();
+                    this.DLNAOpen();
+                },
+                DLNAAndAirPlayClose () {
+                    this.AirPlayClose();
+                    this.DLNAClose();
+                },
+                musicLightControl (val) {
+                    if (val) {
+                        this.musicLightOpen()
+                    } else {
+                        this.musicLightClose()
+                    }
+                },
+                musicLightOpen () {
+                    this.sendWSPush(apis('Open ambient light', 1)['musicLight'])
+                },
+                musicLightClose () {
+                    this.sendWSPush(apis('Open ambient light', 0)['musicLight']);
+                },
+                musciLightLuma (val) {
+                    this.sendWSPush(apis(val)['musciLightLuma']);
+                },
+                musicLightChroma (val) {
+                    this.sendWSPush(apis(val)['musicLightChroma']);
+                },
+                //Ambient effect
+                musicLightMode (val) {
+                    this.sendWSPush(apis(this.musicLightModes[val], val)['musicLightMode'])
+                },
+                screenInit () {
+                    if (this.screen == null) {
+                        this.screen = document.getElementById('screen');
+                    }
+
+                    this.screen.addEventListener('click', this.screenOnclick)
+                    this.screen.addEventListener("touchstart", this.handleTouchEvent, false);
+                    this.screen.addEventListener("touchend", this.handleTouchEvent, false);
+                    this.screen.addEventListener("touchmove", this.handleTouchEvent, false);
+                    this.screen.addEventListener("mousewheel", this.screenOnmousewheel, false);
+                    this.screen.addEventListener("contextmenu", this.screenOncontextmenu, false);
+                },
+                // Start Screenshot
+                startScreen () {
+                    this.sendWSPush(apis('start_screencap')['screen']);
+                    document.onkeydown = function (data) {
+                        if (data.keyCode == 13) {
+                            this.sendKeyevent(23);
+                            return false;
+                        } else if (data.keyCode == 37) {
+                            this.sendKeyevent(21);
+                            return false;
+                        } else if (data.keyCode == 38) {
+                            this.sendKeyevent(19);
+                            return false;
+                        } else if (data.keyCode == 39) {
+                            this.sendKeyevent(22);
+                            return false;
+                        } else if (data.keyCode == 40) {
+                            this.sendKeyevent(20);
+                            return false;
+                        }
+                    };
+                },
+                //Stop Screenshot
+                stopScreen () {
+                    this.sendWSPush(apis('stop_screencap')['screen']);
+                    document.onkeydown = function () { };
+                    document.onkeyup = function () { };
+                },
+                //Update Screenshot
+                updateScreencap (blob) {
+                    //this.screencap = host + '/screencap?t=' + new Date().getTime();
+                    if (this.reader == null) {
+                        this.reader = new FileReader();
+                        this.reader.onload = (e) => {
+                            this.screencap = e.target.result
+                            // console.log(e.target.result)
+                        }
+                    }
+                    this.reader.readAsDataURL(blob)
+                },
+                //Send Key Event
+                sendKeyevent (key) {
+                    this.sendWSPush(apis('keyevent ' + key)['keyEvent'])
+                },
+                handleTouchEvent (e) {
+                    let that = this.screen
+                    let cw = that.clientWidth
+                    let ch = that.clientHeight
+                    let nw = that.naturalWidth
+                    let nh = that.naturalHeight
+                    let x = e.changedTouches[0].clientX;
+                    let y = e.changedTouches[0].clientY;
+                    x = parseInt((x / cw) * nw);
+                    y = parseInt((y / ch) * nh);
+                    if (e.type == 'touchstart') {
+                        this.startx = x;
+                        this.starty = y;
+                    } else if (e.type == 'touchend') {
+                        if (this.startx == -1 || this.starty == -1) {
+                            return
+                        }
+                        if (y - this.starty < 50 && x - this.startx < 50) {
+                            if (this.starty - y < 50 && this.startx - x < 50) {
+                                this.startx = -1;
+                                this.starty = -1;
+                                return;
+                            }
+                        }
+                        this.sendWSPush(apis('swipe ' + this.startx + ' ' + this.starty + ' ' + x + ' ' + y)['keyEvent'])
+                        this.startx = -1;
+                        this.starty = -1;
+                    } else if (e.type == 'touchmove') {
+                        e.preventDefault(); //Prevent scrolling
+                    }
+                },
+                screenOnclick (e) {
+                    let that = this.screen
+                    let cw = that.clientWidth
+                    let ch = that.clientHeight
+                    let nw = that.naturalWidth
+                    let nh = that.naturalHeight
+                    this.sendWSPush(apis('tap ' + parseInt((e.offsetX / cw) * nw) + ' ' + parseInt((e.offsetY / ch) * nh))['keyEvent'])
+                },
+                screenOnmousewheel (e) {
+                    e.preventDefault();
+                    let that = this.screen
+                    let cw = that.clientWidth
+                    let ch = that.clientHeight
+                    let nw = that.naturalWidth
+                    let nh = that.naturalHeight
+                    let x = e.offsetX;
+                    let y = e.offsetY;
+                    let new_y = 0
+                    let mousewheel_interval = -1
+
+                    x = (x / cw) * nw;
+                    y = (y / ch) * nh;
+                    if (e.deltaY > -1) {
+                        new_y = y - 100;
+                    } else {
+                        new_y = y + 100;
+                    }
+
+                    if (new Date().valueOf() - mousewheel_interval > 0) {
+                        mousewheel_interval = new Date().valueOf() + 100;
+                        this.sendWSPush(apis('swipe ' + x + ' ' + y + ' ' + x + ' ' + new_y)['keyEvent'])
+                    }
+                },
+                screenOncontextmenu (e) {
+                    e.preventDefault();
+                    this.sendKeyevent(4)
+                },
+                addEqMode () {
+                    if (this.eqModeName.length < 1) {
+                        this.notification('', 'No name entered', 'error')
+                        return
+                    } else {
+                        this.dialogVisible = false;
+                        let band = this.soundEffect.eq.Bands.list
+                        let obj = {
+                            Name: this.eqModeName,
+                            BandList: [
+                                { Band: 0, BandLevel: band[0].BandLevel },
+                                { Band: 1, BandLevel: band[1].BandLevel },
+                                { Band: 2, BandLevel: band[2].BandLevel },
+                                { Band: 3, BandLevel: band[3].BandLevel },
+                                { Band: 4, BandLevel: band[4].BandLevel }
+                            ]
+                        }
+                        this.eqlsControl('set', [obj])
+                        this.eqModeName = ''
+                    }
+                },
+                updateEqMode () {
+                    let modes = this.eqlsControl('get') || []
+                    this.myEqMode2 = modes
+                },
+                delEqMode (item) {
+                    console.log(item)
+                    if (item.Name == 'Electronic music') {
+                        return
+                    }
+                    let old = this.eqlsControl('get')
+                    let delIndex = old.findIndex(i => i.Name == item.Name)
+                    if (delIndex > -1) {
+                        old.splice(delIndex, 1)
+                    }
+                    this.eqlsControl('del')
+                    this.eqlsControl('set', old)
+                },
+                eqlsControl (type = 'set', val) {
+                    let key = 'myEqMode'
+                    if (type == 'set') {
+                        let old = JSON.parse(window.localStorage.getItem(key)) || []
+                        let delIndex = old.findIndex(i => i.Name == val[0].Name)
+                        if (delIndex > -1) {
+                            old.splice(delIndex, 1)
+                        }
+
+                        window.localStorage.setItem(key, JSON.stringify([...old, ...val]))
+                        this.myEqMode2 = [...old, ...val]
+                    } else if (type == 'get') {
+                        return JSON.parse(window.localStorage.getItem(key)) || ''
+                    } else if (type == 'del') {
+                        window.localStorage.removeItem(key)
+                        this.myEqMode2 = []
+                    } else {
+                        this.notification('Error', 'Type setting error', 'error')
+                    }
+                },
+                //Notification
+                notification (title = 'Test', msg = 'No content', type = 'error') {
+                    this.$notify({
+                        title: title,
+                        message: msg,
+                        type: type,
+                        duration: 2000
+                    });
+                },
+                //Light switch
+                light (val = false) {
+                    let shell = val ? 'lights_test set 7fffff8000 ffffff' : 'lights_test set 7fffff8000 0'
+                    this.sendWSPush(apis('Turn on light', shell)['shell'])
+                },
+                //Open network connection
+                netConfig () {
+                    this.sendWSPush(apis()['netConfig'])
+                },
+                //Execute custom shell command
+                executeShell () {
+                    if (this.shellStr) {
+                        this.sendWSPush(apis('myshell', this.shellStr)['shell'])
+                    } else {
+                        console.log('Input information is empty')
+                    }
+                },
+                //Restart app
+                restartApp (app, type) {
+                    app = app || this.listPackagesIndex
+                    this.stopApp(app)
+                    setTimeout(() => {
+                        this.startApp(app)
+                    }, 3000)
+                },
+                stopApp (app) {
+                    app = app || this.listPackagesIndex
+                    let shell = '/system/bin/am force-stop ' + app
+                    this.sendWSPush(apis('Stop', shell)['shell'])
+                    this.notification('Stopping app', app, 'success')
+                },
+                startApp (app) {
+                    app = app || this.listPackagesIndex
+                    let shell = '/system/bin/am start ' + app + '/.ui.MainActivity'
+                    this.sendWSPush(apis('Start', shell)['shell'])
+                    this.notification('Starting app', app, 'success')
+                },
+                //Reboot speaker
+                reboot () {
+                    let shell = 'stop adbd&&start adbd&&adb reboot'
+                    this.sendWSPush(apis('Reboot speaker', shell)['shell'])
+                },
+                getListPackages () {
+                    let shell = '/system/bin/pm list packages'
+                    this.sendWSPush(apis('packages', shell)['shell'])
+                },
+                setListPackages (data) {
+                    this.listPackages = []
+                    for (let item of data.split("\r\n")) {
+                        let i = item.split(':')
+                        if (i[1] && i[1] != 'android') {
+                            this.listPackages.push(i[1])
+                        }
+                    }
+                },
+                //Clear alarm
+                clear () {
+                    let shell = '/system/bin/pm clear com.phicomm.speaker.device'
+                    this.sendWSPush(apis('Clear', shell)['shell'])
+                    this.restartApp('com.phicomm.speaker.device')
+                },
+                // Get system information
+                getSystemInfo () {
+                    let shell = 'cat /proc/meminfo&&cat /proc/stat&&echo incremental:$(getprop ro.build.version.incremental)'
+                    this.sendWSPush(apis('query', shell)['shell'])
+                },
+                // Process and store system information
+                setSystemInfo (data) {
+
+                    for (let item of data.split("\r\n")) {
+                        let i = item.split(':')
+                        // console.log(i[0], this.systemInfo.hasOwnProperty(i[0]))
+                        if (this.systemInfo.hasOwnProperty(i[0])) {
+                            this.systemInfo[i[0]] = parseInt(i[1])
+                        } else {
+                            let index = item.indexOf(' ')
+                            let key = item.substring(index, 0)
+                            if (this.systemInfo.hasOwnProperty(key)) {
+                                if (key == 'btime') {
+                                    this.systemInfo[key] = item.substring(index) * 1000
+                                } else {
+                                    this.systemInfo[key] = item.substring(index)
+                                }
+                            }
+                        }
+                    }
+                },
+                //Toggle theme color
+                toggleTheme () {
+                    if (this.theme == 'light') {
+                        this.theme = 'dark'
+                    } else {
+                        this.theme = 'light'
+                    }
+                    localStorage.setItem('theme', this.theme)
+                },
+                //Music playback control: play/pause, previous track, next track
+                play () {
+                    this.deviceInfo.play_state = true
+                    this.sendWSPush(apis()['play'])
+                },
+                pause () {
+                    this.deviceInfo.play_state = false
+                    this.deviceInfo.music_info.state = 2
+                    this.sendWSPush(apis()['pause'])
+                },
+                prev () {
+                    this.deviceInfo.play_state = true
+                    this.sendWSPush(apis()['prev'])
+                    this.getSongInfo()
+                },
+                next () {
+                    this.deviceInfo.play_state = true
+                    this.sendWSPush(apis()['next'])
+                },
+                //Add song to favorites
+                collect () {
+                    this.sendWSPush(bandaoapis()['collect'])
+                },
+                //Remove song from favorites
+                cancelCollect () {
+                    this.sendWSPush(bandaoapis()['cancelCollect'])
+                },
+                //Play music and center the current song on the page
+                playMusic (e) {
+                    let targetEl = e.target
+                    let i = 0
+                    while (i < 5) {
+                        i++
+                        if (targetEl.className && targetEl.className.indexOf('track playlist') != -1) {
+                            let index = targetEl.dataset.index
+                            this.sendWSPush(apis(index)['playMusic'])
+
+                            this.list.playIndex = index
+                            this.scrollIntoCenter(targetEl)
+                            break;
+                        } else {
+                            targetEl = targetEl.parentNode;
+                            // console.log(targetEl)
+                        }
+                    }
+                },
+                //Mute
+                mute () {
+                    let volume = this.deviceInfo.vol
+                    if (volume == 0) {
+                        volume = this.getVolume || 2
+                    } else {
+                        localStorage.setItem('volume', volume)
+                        volume = 0
+                    }
+
+                    this.setVolume(volume)
+                    this.deviceInfo.vol = volume
+                },
+                //Set playback mode
+                setPlayMode (mode) {
+                    // 1: Shuffle;2: Sequential;3: Single track
+                    mode = mode || this.deviceInfo.play_mode == 3 ? 1 : this.deviceInfo.play_mode + 1
+                    // console.log(mode, this.deviceInfo.play_mode)
+                    this.deviceInfo.play_mode = mode
+                    // console.log(this.deviceInfo.play_mode)
+                    this.sendWSPush(apis(mode)['setPlayMode'])
+                },
+                getList () {
+                    this.sendWSPush(apis()['list'])
+                },
+                // Get information of the currently playing song
+                getSongInfo () {
+                    let id = this.deviceInfo.music_info.id.split(',')[0]
+                    // console.log(id)
+                    new Promise((res, rej) => {
+                        let DetailPromise = this.getMusicDetail(id)
+                        DetailPromise.then(list => {
+                            // console.log(list)
+                            res(list.itemList[0])
+                        })
+                    }).then(res => {
+                        // artist: "Zheng Yu"
+                        // id: "MUSIC_180216407"
+                        // link: "http://www.kuwo.cn/yinyue/180216407"
+                        // lrc: "[00:02.29]Zentan - Zheng Yu\r\n[00:04.58]词：Listen Dream\r\n[00:06.87]"
+                        // name: "Zentan"
+                        // pic: "http://img2.kuwo.cn/star/albumcover/500/16/9/3784544836.jpg"
+                        this.songInfo = {
+                            artist: res.artist,
+                            id: res.itemId,
+                            link: '',
+                            name: res.title,
+                            pic: 'http://p4.music.126.net/dbMimdGInV87myZFakgHeA==/109951163176668498.jpg?param=34y34'
+                        }
+                        // console.log(this.songInfo)
+                    })
+                },
+
+                // Play a song from the playlist through Bandao WebSocket
+                bandaoWsPlayMenu (list) {
+                    let Socket = new WebSocket('ws://' + hostname + ':' + 9998);
+                    Socket.onopen = () => {
+                        this.notification('Success', 'Requesting playback, please wait', 'success')
+                        Socket.send(JSON.stringify(bandaoApis(list)['playMenu']))
+                        //If the following data is not sent, it will not play
+                        Socket.send(JSON.stringify({ type: 'sendMsg', what: 4, arg1: 11, arg2: -1, dataType: 'int', data: 0 }))
+                        Socket.send(JSON.stringify({ type: 'sendMsg', what: 4, arg1: 2, arg2: -1, dataType: null, data: null }))
+                        Socket.send(JSON.stringify({ type: 'sendMsg', what: 4, arg1: 3, arg2: -1, dataType: null, data: null }))
+
+                        Socket.close()
+                    }
+                },
+                //Convert milliseconds to seconds (can be greater than 60)
+                typeMmss (ss) {
+                    if (ss) {
+                        return new Date(ss).totalDay('mm:ss')
+                    }
+                    return ss
+                },
+                //Get NetEase Cloud Music leaderboard
+                getNetEaseBangMenu () {
+                    if (this.netEaseBangMenu.length > 0) {
+                        return
+                    }
+                    this.isLoading.playMusicNavmenu = true
+                    axios({
+                        method: 'get',
+                        baseURL,
+                        url: '/toplist',
+                    }).then(resp => {
+                        if (resp.status == 200 && resp.data.code == 200) {
+                            let d = resp.data
+                            if (d.list.length) {
+                                let item = {
+                                    name: 'NetEase Music Chart',
+                                    list: []
+                                }
+                                for (let i of d.list) {
+                                    let _list = {
+                                        id: i.id,
+                                        intro: i.description,
+                                        name: i.name,
+                                        pic: i.coverImgUrl,
+                                        pub: i.updateFrequency,
+                                    }
+                                    item.list.push(_list)
+                                }
+                                this.netEaseBangMenu.push(item)
+                                // console.log(this.netEaseBangMenu)
+                            }
+                        }
+                    }).finally(() => {
+                        this.isLoading.playMusicNavmenu = false
+                    })
+                },
+                getListDetail (id) { //Get playlist details
+                    return axios({
+                        method: 'get',
+                        baseURL,
+                        url: '/playlist/detail',
+                        params: {
+                            id: id,
+                        }
+                    }).then(res => {
+                        return res
+                    })
+                },
+                // Get song details by passing one or multiple music IDs (separated by commas) to the API(ids=347230,347231)
+                getMusicDetail (ids) {
+                    return axios({
+                        method: 'get',
+                        baseURL,
+                        url: '/song/detail',
+                        params: {
+                            ids: ids,
+                        }
+                    }).then(res => {
+                        // console.log(res)
+                        let songs = res.data.songs
+                        let list = {
+                            index: 0,
+                            asrResult: null,
+                            pageIndex: 1,
+                            totalPage: 1,
+                            itemList: [],
+                        }
+                        for (let i of songs) {
+                            let item = {
+                                itemType: 0,
+                                title: i.name,
+                                url: `http://music.163.com/song/media/outer/url?id=${i.id}.mp3`,
+                                itemId: `${i.id},${i.dt}`,
+                                album: i.al.name,
+                                artist: i.ar[0].name,
+                                duration: i.dt, //No response when sending the data; must send only the ID
+                            }
+                            list.itemList.push(item)
+                        }
+                        // console.log(list)
+                        return list
+                    })
+                },
+                // Format Track ID
+                formatTrackIds (trackIds) {
+                    /** 
+                     * trackIds[{
+                        alg: null
+                        at: 1685491973418
+                        f: null
+                        id: 2049512697
+                        lr: 1
+                        ratio: 345
+                        rcmdReason: ""
+                        sc: null
+                        sr: null
+                        t: 0
+                        uid: 1
+                        v: 3
+                    * }]
+                    */
+                    let ids = ''
+                    for (let i of trackIds) {
+                        ids += (',' + i.id)
+                    }
+                    return ids.slice(1)
+                },
+                // Format playlist ID
+                goToPlayList (id) {
+                    // console.log(id)
+                    this.getListDetail(id).then(res => {
+                        return this.formatTrackIds(res.data.playlist.trackIds)
+                    }).then(ids => {
+                        return this.getMusicDetail(ids)
+                    }).then(res => {
+
+                        return this.bandaoWsPlayMenu(res)
+                    })
+                },
+                // Prepare to play the single track
+                goToPlay () { },
+                // Get user's playlist based on the user's UID
+                getMyMusicMenu (refresh = false) {
+                    if (!(netEaseUid - 0 > 0)) {
+                        return
+                    }
+                    // Avoid erroneous refreshes except for manual ones
+                    if (refresh) { } else if (this.myMusicMenu.length > 0) {
+                        return
+                    }
+                    this.isLoading.playMusicNavmenu = true
+                    axios({
+                        method: 'get',
+                        baseURL,
+                        url: '/user/playlist',
+                        params: {
+                            uid: netEaseUid,
+                        }
+                    }).then(res => {
+                        if (res.status == 200 && res.data.code == 200) {
+                            let playlist = res.data.playlist
+                            if (playlist.length > 0) {
+                                // "Reset
+                                this.myMusicMenu = []
+                                let item = {
+                                    name: 'My Playlist',
+                                    list: []
+                                }
+                                for (let i of playlist) {
+                                    if (i.trackCount > 0) {
+                                        let _list = {
+                                            id: i.id,
+                                            intro: i.description,
+                                            name: i.name,
+                                            pic: i.coverImgUrl,
+                                            pub: i.updateFrequency,
+                                        }
+                                        item.list.push(_list)
+                                    }
+                                }
+                                this.myMusicMenu.push(item)
+                            }
+                        }
+                    }).finally(() => {
+                        this.isLoading.playMusicNavmenu = false
+                    })
+                },
+                // Refresh my playlist
+                refreshMyMenu () {
+                    if (!(netEaseUid - 0 > 0)) {
+                        return
+                    }
+                    this.getMyMusicMenu(true)
+                },
+                // Favorite/Bookmark NetEase Cloud playlist
+                collectMusicList () {
+                    this.getListDetail(this.netEaseLId).then(res => {
+                        this.setCollectMusicList(res.data.playlist)
+                    })
+                },
+                setCollectMusicList (list) {
+                    this.delCollectMusicList(list.id)
+                    let _list = {
+                        id: list.id,
+                        intro: list.description,
+                        name: list.name,
+                        pic: list.coverImgUrl,
+                        pub: list.updateFrequency,
+                    }
+                    this.collectList[0].list.push(_list)
+                },
+                delCollectMusicList (id) {
+                    let l = this.collectList[0].list
+                    let n = []
+                    for (let i of l) {
+                        if (i.id != id) {
+                            n.push(i)
+                        }
+                    }
+                    this.collectList[0].list = n
+                },
+                scrollIntoCenter (el) {
+                    if (!el) {
+                        console.log('The element to scroll does not exist')
+                        return
+                    }
+                    el.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'center'
+                    })
+                }
+            },
+            computed: {
+                AirPlay () {
+                    return this.deviceInfo.airplay_open
+                },
+                DLNA () {
+                    return this.deviceInfo.dlna_open
+                },
+                DLNAAndAirPlay () {
+                    return this.deviceInfo.airplay_open && this.deviceInfo.dlna_open
+                },
+                Bluetooth () {
+                    if (this.deviceInfo.device_state == 3) {
+                        return true
+                    } else {
+                        return false
+                    }
+                },
+                isPlay () {
+                    let di = this.deviceInfo
+                    let result = di.play_state || (di.music_info && di.music_info.state != 2)
+                    return result
+                },
+                getVolume () {
+                    return localStorage.getItem('volume')
+                },
+            },
+            watch: {
+                'deviceInfo.music_info.id': {
+                    handler (val, old) {
+                        if (val) {
+                            this.getList()
+                            this.getSongInfo()
+                            let info = this.deviceInfo.music_info
+                            this.setPageTitle('▶  ' + info.title + '_' + info.artist)
+                        } else {
+                            this.setPageTitle(defaultTitle)
+                        }
+                    },
+                    immediate: true
+                },
+                nextTracksPage (val, old) {
+                    // console.log(val)
+                    if (val) {
+                        this.$nextTick(e => {
+                            this.scrollIntoCenter(this.$refs['playList' + this.list.playIndex][0])
+                        })
+                    }
+                },
+                'list.playIndex': {
+                    handler (val, old) {
+                        if (this.nextTracksPage) {
+                            this.scrollIntoCenter(this.$refs['playList' + this.list.playIndex][0])
+                        }
+                    },
+                },
+                currentMusicProgress (val, old) {
+                    this.cmp = old
+                },
+                'collectList': {
+                    handler (val, old) {
+                        localStorage.setItem('collectList', JSON.stringify(this.collectList))
+                    },
+                    deep: true,
+                },
+            }
+        })
+
+    }
+
+    vueBox()
+    addCss(myStyle)
+  /*
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            let timer = setInterval(function () {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              //console.log(getEl('#input')[0])
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              // 判断页面完成加载与否
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              if (getEl('body pre')[0] != undefined) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                DelEl(getEl('body pre')[0])
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                addMeta
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                vueBox();
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                loadCss('https://unpkg.com/element-ui/lib/theme-chalk/index.css');
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                addCss(myStyle)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                clearInterval(timer);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }, 500);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            */
+</script>
+
+</html>
