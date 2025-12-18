@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R1 Speaker Control Ultimate</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #3b82f6;
+            margin-top: -5px;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #60a5fa;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 2px;
+        }
+        
+        /* Vertical Slider Fix */
+        .slider-vertical-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 140px;
+            width: 40px;
+        }
+        .vertical-range {
+            -webkit-transform: rotate(-90deg);
+            -moz-transform: rotate(-90deg);
+            -ms-transform: rotate(-90deg);
+            transform: rotate(-90deg);
+            width: 120px;
+            height: 40px; /* Increase touch area */
+            margin: 0;
+            transform-origin: center;
+            -webkit-transform-origin: center;
+            -moz-transform-origin: center;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        .tab-btn.active {
+            background-color: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+    </style>
+</head>
+<body class="bg-[#0b0f19] text-slate-200 min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="border-b border-slate-800 bg-[#0f172a]/90 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                        <i class="fa-solid fa-wave-square text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-lg tracking-tight text-white">LOA AI THAOVYCOMPUTER.COM - R1 Control</span>
+                        <span class="text-[10px] uppercase font-bold text-blue-400 bg-blue-900/30 px-1.5 py-0.5 rounded ml-1 border border-blue-500/20">V17.7 PRO</span>
+                    </div>
+                </div>
+                
+                <!-- Connection -->
+                <div class="flex items-center gap-2">
+                    <div id="connectionDot" class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div>
+                    <input type="text" id="ipInput" placeholder="192.168.1.x" class="bg-slate-800 text-xs border border-slate-700 rounded px-3 py-1.5 focus:border-blue-500 outline-none w-32 transition-all font-mono">
+                    <button id="btnScanIP" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded transition-all shadow-lg shadow-amber-900/20" title="Quét IP tự động">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <button id="btnConnect" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded transition-all shadow-lg shadow-blue-900/20">
+                        KẾT NỐI
+                    </button>
+                    <button id="btnAutoConnect" class="bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded transition-all shadow-lg shadow-green-900/20" title="Tự động kết nối">
+                        <i class="fa-solid fa-link"></i>
+                    </button>
+                    <span id="autoConnectStatus" class="text-[10px] text-slate-400 font-mono"></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- LEFT COLUMN: Media & Playback (4 cols) -->
+            <div class="lg:col-span-4 space-y-5">
+                
+                <!-- Media Card -->
+                <div class="glass-panel rounded-2xl p-0 overflow-hidden relative group">
+                    <!-- Album Art Background -->
+                    <div id="albumArtContainer" class="h-48 bg-gradient-to-br from-slate-800 to-slate-900 relative flex flex-col items-center justify-center p-6 text-center">
+                        <!-- Thumbnail từ YouTube hoặc default -->
+                        <img id="albumArtImg" src="" alt="" class="absolute inset-0 w-full h-full object-cover opacity-20 hidden">
+                        <div class="absolute inset-0 opacity-20 bg-[url('https://picsum.photos/400/400?grayscale&blur=2')] bg-cover bg-center" id="defaultBg"></div>
+                        <div class="z-10 w-24 h-24 rounded-full bg-slate-700/50 flex items-center justify-center mb-3 shadow-2xl border border-white/10">
+                            <i class="fa-solid fa-music text-4xl text-slate-400" id="musicIcon"></i>
+                            <img id="albumArtThumb" src="" alt="" class="w-full h-full rounded-full object-cover hidden">
+                        </div>
+                        <h2 id="trackTitle" class="z-10 font-bold text-white truncate w-full">Không có nhạc</h2>
+                        <p id="trackArtist" class="z-10 text-xs text-blue-300 truncate w-full">---</p>
+                        
+                        <div class="absolute top-3 right-3 z-20">
+                            <span id="sourceBadge" class="text-[10px] font-bold bg-black/40 px-2 py-1 rounded border border-white/10 text-slate-300">IDLE</span>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="p-5 bg-[#0f172a]">
+                        <!-- Search -->
+                        <div class="flex gap-2 mb-6">
+                            <input type="text" id="musicQuery" placeholder="Tìm bài hát..." class="flex-1 bg-slate-800/50 border border-slate-700 rounded px-3 py-2 text-xs focus:border-blue-500 outline-none transition-colors">
+                            <button onclick="app.playMusicInput()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded text-xs transition-colors"><i class="fa-solid fa-search"></i></button>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="flex items-center justify-center gap-6 mb-6">
+                            <button onclick="app.control.prev()" class="text-slate-400 hover:text-white transition-colors p-2"><i class="fa-solid fa-backward-step text-xl"></i></button>
+                            <button onclick="app.control.playPause()" id="btnPlayPause" class="w-14 h-14 rounded-full bg-white text-slate-900 flex items-center justify-center hover:scale-105 transition-all shadow-lg shadow-white/10">
+                                <i class="fa-solid fa-play text-xl ml-1"></i>
+                            </button>
+                            <button onclick="app.control.next()" class="text-slate-400 hover:text-white transition-colors p-2"><i class="fa-solid fa-forward-step text-xl"></i></button>
+                        </div>
+
+                        <!-- Volume -->
+                        <div class="mb-2">
+                            <div class="flex justify-between text-xs text-slate-400 mb-2">
+                                <span><i class="fa-solid fa-volume-high mr-1"></i>Âm lượng</span>
+                                <span id="volText" class="text-blue-400 font-bold">Mức 5</span>
+                            </div>
+                            <!-- Max volume 15 as requested -->
+                            <input type="range" id="volSlider" min="0" max="15" value="5" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="app.ui.updateVol(this.value)" onchange="app.control.setVolume(this.value)">
+                        </div>
+                        
+                        <!-- Mini Tools -->
+                        <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-800">
+                             <button onclick="app.control.toggleMode('repeat')" id="btnRepeat" class="text-xs bg-slate-800 hover:bg-slate-700 py-2 rounded text-slate-400 transition-colors">
+                                <i class="fa-solid fa-repeat mr-1"></i> Lặp: <span id="repeatState">Off</span>
+                             </button>
+                             <button onclick="app.control.toggleMode('shuffle')" id="btnShuffle" class="text-xs bg-slate-800 hover:bg-slate-700 py-2 rounded text-slate-400 transition-colors">
+                                <i class="fa-solid fa-shuffle mr-1"></i> Ngẫu nhiên
+                             </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- MIDDLE COLUMN: Quick Tools (5 cols) -->
+            <div class="lg:col-span-5 space-y-5">
+                
+                <!-- Quick Tools -->
+                <div class="glass-panel rounded-xl p-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Công cụ nhanh</h3>
+                    
+                    <!-- NEW: Bluetooth Toggle -->
+                    <div class="flex items-center justify-between bg-slate-800/50 p-2 rounded mb-3 border border-slate-700/50">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-brands fa-bluetooth text-blue-400 text-sm"></i>
+                            <span class="text-xs text-slate-300 font-medium">Bluetooth</span>
+                        </div>
+                        <div class="flex gap-1.5">
+                             <button onclick="app.control.setBluetooth(true)" class="bg-blue-600 hover:bg-blue-500 text-white text-[10px] px-2.5 py-1 rounded font-bold transition-colors">BẬT</button>
+                             <button onclick="app.control.setBluetooth(false)" class="bg-slate-700 hover:bg-slate-600 text-white text-[10px] px-2.5 py-1 rounded font-bold transition-colors">TẮT</button>
+                        </div>
+                    </div>
+
+                    <!-- Wake Word Sensitivity -->
+                    <div class="bg-slate-800/50 p-2 rounded mb-3 border border-slate-700/50">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-microphone text-purple-400 text-sm"></i>
+                                <span class="text-xs text-slate-300 font-medium">Độ nhạy Wake Word</span>
+                            </div>
+                            <span id="wwSensitivityValue" class="text-xs text-purple-400 font-bold">0.75</span>
+                        </div>
+                        <input type="range" id="wwSensitivitySlider" min="0.1" max="1.0" step="0.05" value="0.75" 
+                               oninput="app.control.setWakeWordSensitivity(parseFloat(this.value))"
+                               class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <span class="text-slate-400">Ít nhạy<br/>(0.1 - ít false positive)</span>
+                            <span class="text-slate-400">Rất nhạy<br/>(1.0 - nhiều false positive)</span>
+                        </div>
+                        <div class="text-[9px] text-slate-500 mt-1 italic text-center">
+                            Càng cao = dễ kích hoạt hơn nhưng nhiều dương tính giả
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="app.control.killBluetooth()" class="bg-red-900/20 hover:bg-red-900/40 border border-red-900/30 text-red-400 text-xs py-2 rounded transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-rotate-right"></i> Reset BT Service
+                        </button>
+                        <button onclick="app.control.startMediaApp()" class="bg-blue-900/20 hover:bg-blue-900/40 border border-blue-900/30 text-blue-400 text-xs py-2 rounded transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-rocket"></i> Start Media
+                        </button>
+                    </div>
+                    
+                    <div class="mt-3 pt-3 border-t border-slate-700/50">
+                        <div class="flex gap-2">
+                            <input type="text" id="ttsInput" placeholder="Nội dung muốn loa nói..." class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs focus:border-purple-500 outline-none">
+                            <button onclick="app.speakInput()" class="bg-purple-600 hover:bg-purple-500 text-white px-3 rounded text-xs"><i class="fa-solid fa-comment-dots"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audio Engine Tabs (Hidden) -->
+                <div class="glass-panel rounded-xl p-5" style="display: none;">
+                    <div class="flex justify-between items-center mb-5">
+                        <h3 class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-sliders text-blue-500"></i> Audio Engine</h3>
+                        <div class="flex bg-slate-800/50 p-1 rounded-lg">
+                            <button onclick="app.ui.showAudioTab('eq')" id="tab-eq" class="tab-btn active px-3 py-1 rounded text-xs font-medium transition-all">Equalizer</button>
+                            <button onclick="app.ui.showAudioTab('surround')" id="tab-surround" class="tab-btn px-3 py-1 rounded text-xs font-medium text-slate-400 hover:text-white transition-all">Surround</button>
+                        </div>
+                    </div>
+
+                    <!-- EQ Panel (Fixed Layout) -->
+                    <div id="panel-eq" class="space-y-4">
+                        <div class="flex justify-between items-end h-[180px] bg-slate-800/30 rounded-xl p-4 border border-slate-700/30 relative">
+                            <!-- 5 Bands -->
+                            <div class="flex flex-col items-center justify-end h-full flex-1 gap-2">
+                                <div class="slider-vertical-wrapper">
+                                    <input type="range" data-band="0" min="-1500" max="1500" step="100" value="0" class="vertical-range bg-slate-600 rounded appearance-none" oninput="app.control.setEqBand(0, this.value)">
+                                </div>
+                                <span class="text-[10px] font-mono text-slate-400 mt-2">60Hz</span>
+                            </div>
+                            <div class="flex flex-col items-center justify-end h-full flex-1 gap-2">
+                                <div class="slider-vertical-wrapper">
+                                    <input type="range" data-band="1" min="-1500" max="1500" step="100" value="0" class="vertical-range bg-slate-600 rounded appearance-none" oninput="app.control.setEqBand(1, this.value)">
+                                </div>
+                                <span class="text-[10px] font-mono text-slate-400 mt-2">230Hz</span>
+                            </div>
+                            <div class="flex flex-col items-center justify-end h-full flex-1 gap-2">
+                                <div class="slider-vertical-wrapper">
+                                    <input type="range" data-band="2" min="-1500" max="1500" step="100" value="0" class="vertical-range bg-slate-600 rounded appearance-none" oninput="app.control.setEqBand(2, this.value)">
+                                </div>
+                                <span class="text-[10px] font-mono text-slate-400 mt-2">910Hz</span>
+                            </div>
+                            <div class="flex flex-col items-center justify-end h-full flex-1 gap-2">
+                                <div class="slider-vertical-wrapper">
+                                    <input type="range" data-band="3" min="-1500" max="1500" step="100" value="0" class="vertical-range bg-slate-600 rounded appearance-none" oninput="app.control.setEqBand(3, this.value)">
+                                </div>
+                                <span class="text-[10px] font-mono text-slate-400 mt-2">3.6k</span>
+                            </div>
+                            <div class="flex flex-col items-center justify-end h-full flex-1 gap-2">
+                                <div class="slider-vertical-wrapper">
+                                    <input type="range" data-band="4" min="-1500" max="1500" step="100" value="0" class="vertical-range bg-slate-600 rounded appearance-none" oninput="app.control.setEqBand(4, this.value)">
+                                </div>
+                                <span class="text-[10px] font-mono text-slate-400 mt-2">14k</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Presets -->
+                        <div class="flex flex-wrap gap-2 justify-center">
+                            <button onclick="app.control.applyEqPreset('flat')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 border border-slate-700">Flat</button>
+                            <button onclick="app.control.applyEqPreset('bass')" class="px-3 py-1.5 bg-blue-900/30 hover:bg-blue-900/50 rounded text-[10px] text-blue-300 border border-blue-800/30">Bass Boost</button>
+                            <button onclick="app.control.applyEqPreset('vocal')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 border border-slate-700">Vocal</button>
+                            <button onclick="app.control.applyEqPreset('rock')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 border border-slate-700">Rock</button>
+                            <button onclick="app.control.applyEqPreset('jazz')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 border border-slate-700">Jazz</button>
+                        </div>
+                        
+                        <!-- Extra Bass/Loudness -->
+                        <div class="grid grid-cols-2 gap-3 mt-2">
+                             <div class="bg-slate-800/50 p-3 rounded-lg flex items-center justify-between">
+                                <span class="text-xs text-slate-300">Bass+</span>
+                                <input type="checkbox" onchange="app.control.toggleBass(this.checked)" class="accent-blue-500 w-4 h-4">
+                             </div>
+                             <div class="bg-slate-800/50 p-3 rounded-lg flex items-center justify-between">
+                                <span class="text-xs text-slate-300">Loudness</span>
+                                <input type="checkbox" onchange="app.control.toggleLoudness(this.checked)" class="accent-blue-500 w-4 h-4">
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Surround Panel (Hidden by default) -->
+                    <div id="panel-surround" class="hidden space-y-4 py-2">
+                        <div class="flex justify-between items-center mb-2">
+                             <span class="text-xs font-bold text-slate-400">VIRTUAL SURROUND</span>
+                             <button onclick="app.control.toggleSurround(false)" class="text-[10px] text-red-400 hover:underline">Reset</button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-[10px] text-slate-400 mb-1"><span>WIDTH (Độ rộng)</span><span id="val-width">40</span></div>
+                                <input type="range" id="sur-w" min="0" max="100" value="40" class="w-full h-1 bg-slate-700 rounded" oninput="app.control.updateSurround()">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[10px] text-slate-400 mb-1"><span>PRESENCE (Hiện diện)</span><span id="val-presence">30</span></div>
+                                <input type="range" id="sur-p" min="0" max="100" value="30" class="w-full h-1 bg-slate-700 rounded" oninput="app.control.updateSurround()">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[10px] text-slate-400 mb-1"><span>SPACE (Không gian)</span><span id="val-space">10</span></div>
+                                <input type="range" id="sur-s" min="0" max="100" value="10" class="w-full h-1 bg-slate-700 rounded" oninput="app.control.updateSurround()">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2 mt-4">
+                            <button onclick="app.control.applySurPreset('cinema')" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-xs text-slate-300">🎬 Cinema</button>
+                            <button onclick="app.control.applySurPreset('wide')" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-xs text-slate-300">🌌 Wide Space</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lighting Control (Hidden) -->
+                <div class="glass-panel rounded-xl p-5" style="display: none;">
+                    <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-lightbulb text-yellow-400"></i> Lighting Control</h3>
+                    
+                    <!-- Mode Selector -->
+                    <div class="bg-slate-800/50 p-1 rounded-lg flex mb-4">
+                        <button onclick="app.ui.showLightTab('main')" id="ltab-main" class="flex-1 py-1.5 rounded text-xs font-medium bg-blue-600 text-white transition-all shadow">Đèn Chính (RGB)</button>
+                        <button onclick="app.ui.showLightTab('edge')" id="ltab-edge" class="flex-1 py-1.5 rounded text-xs font-medium text-slate-400 hover:text-white transition-all">Đèn Viền (Edge)</button>
+                    </div>
+
+                    <!-- Main RGB Panel (Simplified) -->
+                    <div id="lpanel-main" class="space-y-4">
+                        <div class="flex justify-between items-center bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
+                            <span class="text-xs font-bold text-slate-300">Trạng thái</span>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="sw-main-light" onchange="app.control.toggleMainLight(this.checked)" class="accent-blue-500 w-5 h-5">
+                            </div>
+                        </div>
+
+                        <!-- Brightness Control -->
+                        <div class="bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
+                            <div class="flex justify-between text-[10px] text-slate-400 mb-2 font-bold uppercase">
+                                <span><i class="fa-solid fa-sun mr-1"></i>Cường độ sáng</span>
+                                <span id="brightnessDsp">100%</span>
+                            </div>
+                            <input type="range" id="mainBrightness" min="0" max="100" value="100" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('brightnessDsp').innerText = this.value + '%'; app.control.setLightBrightness(this.value)">
+                        </div>
+
+                        <!-- Speed Control -->
+                        <div class="bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
+                            <div class="flex justify-between text-[10px] text-slate-400 mb-2 font-bold uppercase">
+                                <span><i class="fa-solid fa-gauge-high mr-1"></i>Tốc độ</span>
+                                <span id="speedDsp">50%</span>
+                            </div>
+                            <input type="range" id="mainSpeed" min="0" max="100" value="50" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('speedDsp').innerText = this.value + '%'; app.control.setLightSpeed(this.value)">
+                        </div>
+
+                        <!-- Integrated Modes -->
+                        <div>
+                            <span class="text-[10px] text-slate-400 font-bold uppercase mb-2 block">Chế độ tích hợp (Firmware)</span>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="app.control.setFwMode(0)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[10px] text-slate-300 transition-colors">Mặc Định</button>
+                                <button onclick="app.control.setFwMode(1)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[10px] text-slate-300 transition-colors">Xoay vòng</button>
+                                <button onclick="app.control.setFwMode(2)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[10px] text-slate-300 transition-colors">Nháy 1</button>
+                                <button onclick="app.control.setFwMode(3)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[10px] text-slate-300 transition-colors">Đơn sắc</button>
+                                <button onclick="app.control.setFwMode(4)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[10px] text-slate-300 transition-colors">Nháy 2</button>
+                                <button onclick="app.control.setFwMode(7)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[10px] text-slate-300 transition-colors">Hơi thở</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edge Light Panel (Daemon) with Brightness -->
+                    <div id="lpanel-edge" class="hidden space-y-4">
+                         <div class="flex justify-between items-center bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
+                            <span class="text-xs font-bold text-slate-300">Trạng thái</span>
+                             <div class="flex items-center gap-2">
+                                <input type="checkbox" id="sw-edge-light" onchange="app.control.toggleEdgeLight(this.checked)" class="accent-blue-500 w-5 h-5">
+                            </div>
+                        </div>
+
+                        <!-- Edge Brightness -->
+                        <div class="bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
+                            <div class="flex justify-between text-[10px] text-slate-400 mb-2 font-bold uppercase">
+                                <span><i class="fa-solid fa-lightbulb mr-1"></i>Cường độ viền</span>
+                                <span id="edgeBrightnessDsp">100%</span>
+                            </div>
+                            <input type="range" id="edgeBrightness" min="0" max="100" value="100" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('edgeBrightnessDsp').innerText = this.value + '%'; app.control.setEdgeLightIntensity(this.value)">
+                        </div>
+                        
+                        <div class="space-y-2 pt-2 border-t border-slate-700/50">
+                            <label class="text-[10px] text-slate-400 uppercase font-bold">Hiệu ứng chạy ngầm (Daemon Loop)</label>
+                            <select id="daemonSelect" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-xs outline-none focus:border-blue-500">
+                                <option value="strobe_edge">⚡ Strobe (Nháy loạn)</option>
+                                <option value="breath_edge_simple">💨 Hơi thở (Breath)</option>
+                                <option value="chase_pulse">➡️ Nhịp đuổi (Chase)</option>
+                                <option value="dim_cycle">🔆 Chu kỳ mờ (Dim Cycle)</option>
+                            </select>
+                            <div class="flex gap-2">
+                                <input type="number" id="daemonInterval" value="0.1" step="0.1" min="0.1" class="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-2 text-xs text-center" placeholder="Secs">
+                                <button onclick="app.control.startDaemonLoop()" class="flex-1 bg-green-600 hover:bg-green-500 text-white rounded text-xs font-bold">CHẠY LOOP</button>
+                            </div>
+                            <button onclick="app.control.killDaemon()" class="w-full bg-red-900/50 hover:bg-red-900 text-red-200 border border-red-800/50 py-2 rounded text-xs mt-2">
+                                <i class="fa-solid fa-skull mr-1"></i> TẮT TẤT CẢ (Kill Daemon)
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: System & Logs (3 cols) -->
+            <div class="lg:col-span-3 space-y-5">
+                
+                <!-- System Monitor -->
+                <div class="glass-panel rounded-xl p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-white text-xs uppercase tracking-wider"><i class="fa-solid fa-microchip mr-2"></i>THEO DÕI HỆ THỐNG</h3>
+                        <div id="sys-status-dot" class="w-2 h-2 rounded-full bg-slate-600"></div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- RAM -->
+                        <div>
+                            <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                                <span>RAM Usage</span>
+                                <span id="ramText">--%</span>
+                            </div>
+                            <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                <div id="ramBar" class="h-full bg-blue-500 w-0 transition-all duration-500"></div>
+                            </div>
+                        </div>
+                        <!-- CPU -->
+                        <div>
+                            <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                                <span>CPU Load</span>
+                                <span id="cpuText">--%</span>
+                            </div>
+                            <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                <div id="cpuBar" class="h-full bg-purple-500 w-0 transition-all duration-500"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 mt-4">
+                        <button onclick="app.control.reboot()" class="bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-800/30 py-1.5 rounded text-[10px] transition-colors">Reboot</button>
+                        <button onclick="app.control.startSystemMonitor()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-1.5 rounded text-[10px] transition-colors">Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Terminal -->
+                <div class="glass-panel rounded-xl p-0 flex flex-col h-[300px] overflow-hidden">
+                    <div class="bg-slate-800/80 px-3 py-2 flex justify-between items-center border-b border-slate-700/50">
+                        <span class="text-[10px] font-mono text-slate-400 font-bold">TERMINAL / LOGS</span>
+                        <button onclick="document.getElementById('logConsole').innerHTML = ''" class="text-slate-500 hover:text-white"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                    <div id="logConsole" class="flex-1 bg-[#0b0f19] p-3 overflow-y-auto font-mono text-[10px] space-y-1 text-slate-300">
+                        <div class="text-slate-500 italic">Ready.</div>
+                    </div>
+                    <div class="p-2 bg-slate-800/50 border-t border-slate-700/50">
+                        <input type="text" id="shellInput" placeholder="adb shell cmd..." class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs font-mono focus:border-blue-500 outline-none" onkeypress="if(event.key==='Enter') app.runShell()">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- LOGIC -->
+    <script>
+        // --- CONSTANTS ---
+        const CONFIG = {
+            DEFAULT_PORT: 8081, // WebSocket port (cùng port với HTTP server)
+            TIMEOUT: 12000,
+            MAX_VOL: 15,
+            LIGHT_MAIN_ID: '7fffff0000',
+            LIGHT_EDGE_ID: '7fffff8000',
+            KILL_CMD: "PIDS=$(ps -A | grep 'light_loop' | grep -v grep | awk '{print $2}'); for PID in $PIDS; do kill -9 $PID; done"
+        };
+
+        // --- UTILS ---
+        let logConsoleEl = null;
+        const Logger = {
+            init: () => { logConsoleEl = document.getElementById('logConsole'); },
+            log: (msg, type = 'info') => {
+                if(!logConsoleEl) Logger.init();
+                const time = new Date().toLocaleTimeString('vi-VN', { hour12: false, minute:'2-digit', second:'2-digit' });
+                const div = document.createElement('div');
+                div.className = type === 'error' ? 'text-red-400' : (type === 'sent' ? 'text-blue-400' : 'text-slate-300');
+                div.innerHTML = `<span class="text-slate-600">[${time}]</span> `;
+                const msgSpan = document.createElement('span');
+                msgSpan.textContent = msg;
+                div.appendChild(msgSpan);
+                
+                // RESOURCE OPTIMIZATION: Limit log entries
+                logConsoleEl.appendChild(div);
+                if (logConsoleEl.childElementCount > 50) {
+                    logConsoleEl.removeChild(logConsoleEl.firstChild);
+                }
+                
+                logConsoleEl.scrollTop = logConsoleEl.scrollHeight;
+            }
+        };
+
+        const Utils = {
+            clamp: (v, min, max) => Math.max(min, Math.min(max, v)),
+            debounce: (fn, delay) => { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); }; },
+            throttle: (fn, delay) => { let last=0; return (...args) => { const now=Date.now(); if(now-last>=delay) { last=now; fn(...args); } }; }
+        };
+
+        // --- CONNECTION CLASS (HTTP API) ---
+        class SpeakerConnection {
+            constructor() {
+                this.isConnected = false;
+                this.apiBaseUrl = null;
+                this.updateTimer = null;
+                this.systemMonitorTimer = null;
+            }
+
+            connect(ip) {
+                // Tự động detect IP từ window.location nếu không có
+                if (!ip) {
+                    ip = window.location.hostname || 'localhost';
+                }
+                
+                // Tạo API base URL
+                this.apiBaseUrl = `http://${ip}:${CONFIG.DEFAULT_PORT}/api`;
+                this.isConnected = true;
+                localStorage.setItem('r1_ip', ip);
+                app.ui.setConnectionState(true);
+                app.control.updatePlayButtonUI();
+                Logger.log('Connected via HTTP API!', 'info');
+                
+                // Init sequences
+                this.send({type: 'get_info'});
+                this.send({type: 'get_eq_config'});
+                this.send({type: 'max_vol'}); 
+                
+                // Start periodic updates (thay thế WebSocket keep-alive)
+                clearInterval(this.updateTimer);
+                this.updateTimer = setInterval(() => {
+                    this.send({type: 'get_info'});
+                }, 2000); // Update mỗi 2 giây
+
+                // Start System Monitor
+                app.control.startSystemMonitor();
+            }
+
+            disconnect() {
+                this.isConnected = false;
+                app.ui.setConnectionState(false);
+                app.control.state.isPlaying = false;
+                app.control.updatePlayButtonUI();
+                clearInterval(this.updateTimer);
+                clearInterval(this.systemMonitorTimer);
+                Logger.log('Disconnected.', 'error');
+            }
+
+            async send(payload) {
+                if (!this.isConnected || !this.apiBaseUrl) return null;
+                
+                try {
+                    let response;
+                    const type = payload.type;
+                    
+                    // GET requests cho các endpoint đọc dữ liệu
+                    if (type === 'get_info' || type === 'get_eq_config' || type === 'max_vol') {
+                        const endpoint = type === 'max_vol' ? 'max_vol' : type;
+                        response = await fetch(`${this.apiBaseUrl}/${endpoint}`, {
+                            method: 'GET',
+                            headers: {'Content-Type': 'application/json'}
+                        });
+                    } else {
+                        // POST requests cho các endpoint điều khiển - gửi đến /api với body
+                        response = await fetch(`${this.apiBaseUrl}`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(payload)
+                        });
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const json = await response.json();
+                    
+                    // Xử lý response
+                    if(json.type === 'get_info' && json.data) {
+                        const data = JSON.parse(json.data);
+                        app.updateState(data);
+                    }
+                    else if(json.type === 'get_eq_config' && json.data) {
+                        app.updateEqState(JSON.parse(json.data));
+                    }
+                    else if(json.type === 'shell' && json.type_id === 'query') {
+                        app.updateSystemStats(json.data);
+                    }
+                    
+                    if(payload.type !== 'ping' && payload.type !== 'get_info') {
+                        Logger.log(`TX: ${payload.type}`, 'sent');
+                    }
+                    
+                    return json; // Trả về response để có thể dùng .then()
+                } catch(e) {
+                    Logger.log(`API Error: ${e.message}`, 'error');
+                    if (!this.isConnected) {
+                        this.disconnect();
+                    }
+                    return null;
+                }
+            }
+        }
+
+        // --- CONTROL LOGIC ---
+        class SpeakerControl {
+            constructor(conn) {
+                this.conn = conn;
+                this.state = {
+                    vol: 0,
+                    lightMain: true,
+                    lightEdge: false,
+                    staticColor: '#3b82f6',
+                    isPlaying: false
+                };
+                this.animTimer = null;
+            }
+
+            // Media
+            playPause() {
+                // Logic based on previous working scripts: Play=3, Pause=2
+                // We toggle based on internal state estimation, but also send keyevent as fallback
+                const actionCode = this.state.isPlaying ? 2 : 3;
+                
+                // 1. Send API Command
+                this.conn.send({type: 'send_message', what: 4, arg1: actionCode, arg2: -1});
+                
+                // 2. Send Keyevent (Toggle) - reliable fallback
+                this.shell('input keyevent 85');
+                
+                // Update Local State UI Optimistically
+                this.state.isPlaying = !this.state.isPlaying;
+                this.updatePlayButtonUI();
+                Logger.log(`Toggle Play/Pause (State: ${this.state.isPlaying ? 'Play' : 'Pause'})`);
+            }
+            
+            updatePlayButtonUI() {
+                const btn = document.getElementById('btnPlayPause');
+                if(this.state.isPlaying) {
+                    btn.innerHTML = '<i class="fa-solid fa-pause text-xl ml-1"></i>';
+                } else {
+                    btn.innerHTML = '<i class="fa-solid fa-play text-xl ml-1"></i>';
+                }
+            }
+
+            next() { 
+                this.shell('input keyevent 87');
+                this.conn.send({type: 'send_message', what: 65536, arg1: 0, arg2: 1, obj: 'web_next'});
+                // Also standard API
+                this.conn.send({type: 'next'});
+            }
+            prev() { 
+                this.shell('input keyevent 88');
+                this.conn.send({type: 'send_message', what: 65536, arg1: 0, arg2: 1, obj: 'web_prev'});
+                this.conn.send({type: 'prev'});
+            }
+            
+            playYouTube(audioUrl, title, channel) {
+                Logger.log(`Playing YouTube: ${title}...`);
+                this.conn.send({type: 'youtube_play', audio_url: audioUrl, title: title, channel: channel});
+                this.state.isPlaying = true;
+                this.updatePlayButtonUI();
+            }
+            
+            setVolume(val) {
+                const v = parseInt(val);
+                // Send both set_vol and specific message to ensure it sticks
+                // 1. Standard WS set_vol
+                this.conn.send({type: 'set_vol', vol: v});
+                // 2. Message API (often required for immediate effect)
+                this.conn.send({type: 'send_message', what: 4, arg1: 5, arg2: v});
+                
+                app.ui.updateVol(v);
+                Logger.log(`Volume set to ${v}`);
+            }
+            
+            // Audio Engine
+            toggleBass(en) { this.conn.send({type: 'set_bass_enable', enable: en}); }
+            toggleLoudness(en) { this.conn.send({type: 'set_loudness_enable', enable: en}); }
+            
+            setEqBand(bandIdx, level) {
+                this.conn.send({type: 'set_eq_bandlevel', band: parseInt(bandIdx), level: parseInt(level)});
+            }
+            
+            applyEqPreset(name) {
+                const presets = {
+                    flat: [0,0,0,0,0],
+                    bass: [1200, 700, 0, -200, -100],
+                    vocal: [-300, 400, 900, 500, 200],
+                    rock: [500, 300, 100, 400, 600],
+                    jazz: [200, 200, 200, 400, 600]
+                };
+                const levels = presets[name];
+                if(levels) {
+                    this.conn.send({type: 'set_eq_enable', enable: true});
+                    levels.forEach((lvl, i) => {
+                        this.setEqBand(i, lvl);
+                        const slider = document.querySelector(`input[data-band="${i}"]`);
+                        if(slider) slider.value = lvl;
+                    });
+                    Logger.log(`Applied EQ: ${name}`);
+                }
+            }
+
+            // Virtual Surround
+            toggleSurround(en) {
+                if(!en) {
+                    this.conn.send({type: 'set_loudness_enable', enable: false});
+                    this.applyEqPreset('flat');
+                    return;
+                }
+                this.updateSurround();
+            }
+
+            updateSurround() {
+                const w = parseInt(document.getElementById('sur-w').value);
+                const p = parseInt(document.getElementById('sur-p').value);
+                const s = parseInt(document.getElementById('sur-s').value);
+                
+                document.getElementById('val-width').innerText = w;
+                document.getElementById('val-presence').innerText = p;
+                document.getElementById('val-space').innerText = s;
+
+                const bands = [
+                    -Math.round(s*8),       // 60Hz
+                    -Math.round(w*7),       // 230Hz
+                    -Math.round(w*9),       // 910Hz
+                    Math.round(w*5 + p*6),  // 3.6k
+                    Math.round(w*6 + p*8)   // 14k
+                ];
+                
+                bands.forEach((lvl, i) => {
+                    const safeLvl = Utils.clamp(lvl, -1500, 1500);
+                    this.setEqBand(i, safeLvl);
+                });
+
+                const gain = Utils.clamp(Math.round(s*6 + w*2), 0, 3000);
+                this.conn.send({type: 'set_loudness_enable', enable: true});
+                this.conn.send({type: 'set_loudness_gain', gain: gain});
+                this.conn.send({type: 'set_eq_enable', enable: true});
+            }
+
+            applySurPreset(name) {
+                const presets = {
+                    cinema: {w: 60, p: 40, s: 15},
+                    wide: {w: 80, p: 50, s: 10}
+                };
+                const p = presets[name];
+                if(p) {
+                    document.getElementById('sur-w').value = p.w;
+                    document.getElementById('sur-p').value = p.p;
+                    document.getElementById('sur-s').value = p.s;
+                    this.updateSurround();
+                    Logger.log(`Applied Surround: ${name}`);
+                }
+            }
+
+            // Lights - Main
+            toggleMainLight(en) {
+                this.sendCmd(4, 64, en ? 1 : 0); // 64 = Ambient Light Toggle
+                if(en) this.setFwMode(3); // Default to static
+            }
+            
+            setFwMode(modeId) {
+                // Command: 68 = Set Mode (firmware mode)
+                // Modes based on R1_control.html: 0=default, 1=rotate, 2=flash1, 3=mono, 4=flash2, 7=breathe
+                this.conn.send({type: 'send_message', what: 4, arg1: 68, arg2: modeId});
+                const modeNames = {
+                    0: 'Mặc Định',
+                    1: 'Xoay vòng',
+                    2: 'Nháy 1',
+                    3: 'Đơn sắc',
+                    4: 'Nháy 2',
+                    7: 'Hơi thở'
+                };
+                Logger.log(`Chế độ ánh sáng: ${modeNames[modeId] || 'Chế độ ' + modeId}`);
+            }
+
+            setLightSpeed(speed) {
+                const speedVal = Math.round(speed * 255 / 100);
+                this.conn.send({type: 'send_message', what: 4, arg1: 66, arg2: speedVal});
+            }
+
+            setLightBrightness(brightness) {
+                const brightVal = Math.round(brightness * 255 / 100);
+                this.conn.send({type: 'send_message', what: 4, arg1: 65, arg2: brightVal});
+            }
+
+            // Edge Light (White Only)
+            toggleEdgeLight(en) {
+                this.state.lightEdge = en;
+                if(en) {
+                    // Restore brightness if existing, else max
+                    const val = document.getElementById('edgeBrightness').value;
+                    this.setEdgeLightIntensity(val);
+                } else {
+                    this.shell(`/system/bin/lights_test set ${CONFIG.LIGHT_EDGE_ID} 000000`);
+                }
+                Logger.log(`Edge light ${en ? 'ON' : 'OFF'}`);
+            }
+
+            setEdgeLightIntensity(intensity) {
+                // Calculate grayscale hex for white LED
+                const val = Math.round((parseInt(intensity) / 100) * 255);
+                const hexPair = val.toString(16).padStart(2, '0');
+                const fullHex = `${hexPair}${hexPair}${hexPair}`; // R=G=B for white
+                
+                if(this.state.lightEdge) {
+                    this.shell(`/system/bin/lights_test set ${CONFIG.LIGHT_EDGE_ID} ${fullHex}`);
+                }
+            }
+
+            startDaemonLoop() {
+                const mode = document.getElementById('daemonSelect').value;
+                const interval = parseFloat(document.getElementById('daemonInterval').value);
+                const delay = Math.max(0.05, interval).toFixed(2);
+                const EDGE_ID = CONFIG.LIGHT_EDGE_ID;
+                const KILL = CONFIG.KILL_CMD;
+                
+                let loopBody = "";
+                
+                if(mode === 'strobe_edge') {
+                    loopBody = `while true; do /system/bin/lights_test set ${EDGE_ID} ffffff; sleep ${delay}; /system/bin/lights_test set ${EDGE_ID} 000000; sleep ${delay}; done`;
+                } else if (mode === 'breath_edge_simple') {
+                     const d = Math.max(0.05, interval / 4).toFixed(2);
+                     loopBody = `while true; do /system/bin/lights_test set ${EDGE_ID} 333333; sleep ${d}; /system/bin/lights_test set ${EDGE_ID} 999999; sleep ${d}; /system/bin/lights_test set ${EDGE_ID} ffffff; sleep ${d}; /system/bin/lights_test set ${EDGE_ID} 666666; sleep ${d}; done`;
+                } else if (mode === 'chase_pulse') {
+                    loopBody = `while true; do /system/bin/lights_test set ${EDGE_ID} ffffff; sleep 0.05; /system/bin/lights_test set ${EDGE_ID} cccccc; sleep 0.05; /system/bin/lights_test set ${EDGE_ID} 999999; sleep 0.05; /system/bin/lights_test set ${EDGE_ID} 000000; sleep ${delay}; done`;
+                } else {
+                    // Dim cycle
+                    const d = Math.max(0.05, interval / 5).toFixed(2);
+                    loopBody = `while true; do /system/bin/lights_test set ${EDGE_ID} 111111; sleep ${d}; /system/bin/lights_test set ${EDGE_ID} 555555; sleep ${d}; /system/bin/lights_test set ${EDGE_ID} aaaaaa; sleep ${d}; /system/bin/lights_test set ${EDGE_ID} ffffff; sleep ${d}; /system/bin/lights_test set ${EDGE_ID} 000000; sleep ${d}; done`;
+                }
+
+                const cmd = `${KILL}; nohup /system/bin/sh -c '${loopBody}' >/dev/null 2>&1 &`;
+                this.shell(cmd);
+                Logger.log(`Started Daemon: ${mode} (${delay}s interval)`);
+                
+                // Switch UI focus to Edge
+                this.toggleMainLight(false);
+                document.getElementById('sw-main-light').checked = false;
+                document.getElementById('sw-edge-light').checked = true;
+                this.state.lightEdge = true;
+            }
+
+            killDaemon() {
+                this.shell(`${CONFIG.KILL_CMD}; /system/bin/lights_test set ${CONFIG.LIGHT_MAIN_ID} 000000; /system/bin/lights_test set ${CONFIG.LIGHT_EDGE_ID} 000000;`);
+                Logger.log('Killed Daemon & Lights Off');
+                document.getElementById('sw-edge-light').checked = false;
+                this.state.lightEdge = false;
+            }
+            
+            // New Bluetooth Toggle
+            setBluetooth(enable) {
+                // FIXED: Use correct API command 64 (Open Bluetooth=1, Close Bluetooth=2)
+                const arg1 = enable ? 1 : 2;
+                const type_id = enable ? 'Open Bluetooth' : 'Close Bluetooth';
+                this.conn.send({
+                    type: 'send_message', 
+                    what: 64, 
+                    arg1: arg1, 
+                    arg2: -1,
+                    type_id: type_id
+                });
+                Logger.log(enable ? 'Đang BẬT Bluetooth (API)...' : 'Đang TẮT Bluetooth (API)...');
+            }
+
+            // System
+            startSystemMonitor() {
+                if(this.sysInterval) {
+                    clearInterval(this.sysInterval);
+                    this.sysInterval = null;
+                }
+                // FIXED: Use correct command chain order: meminfo THEN stat
+                const cmd = 'cat /proc/meminfo&&cat /proc/stat';
+                this.sysInterval = setInterval(() => {
+                    if(this.conn && this.conn.isConnected) {
+                        this.conn.send({type: 'shell', type_id: 'query', shell: cmd});
+                    }
+                }, 3000);
+                if(this.conn && this.conn.isConnected) {
+                    this.conn.send({type: 'shell', type_id: 'query', shell: cmd});
+                }
+            }
+
+            reboot() {
+                if(confirm('Khởi động lại loa?')) {
+                    // Reboot system
+                    this.shell('reboot'); 
+                    Logger.log('Đã gửi lệnh Reboot...');
+                }
+            }
+            
+            killBluetooth() { this.shell('am force-stop com.android.bluetooth'); Logger.log('Reset Bluetooth service'); }
+            startMediaApp() { this.shell('am start com.phicomm.speaker.device'); Logger.log('Start Media App'); }
+            
+            setWakeWordSensitivity(value) {
+                // Update UI
+                document.getElementById('wwSensitivityValue').textContent = value.toFixed(2);
+                // Send API request
+                this.conn.send({type: 'set_wake_word_sensitivity', sensitivity: value});
+                Logger.log(`Wake Word Sensitivity: ${value.toFixed(2)}`);
+            }
+            toggleMode(mode) {
+                if(mode === 'repeat') this.conn.send({type: 'set_play_mode', mode: 2}); // All
+                if(mode === 'shuffle') this.conn.send({type: 'set_play_mode', mode: 1}); // Shuffle
+            }
+
+            // Helpers
+            sendCmd(what, arg1, arg2, obj = false) { this.conn.send({type: 'send_message', what, arg1, arg2, obj}); }
+            shell(cmd) { this.conn.send({type: 'shell', type_id: 'myshell', shell: cmd}); }
+        }
+
+        // --- UI LOGIC ---
+        class AppUI {
+            constructor() {
+                this.lastCpu = null;
+            }
+
+            setConnectionState(isConnected) {
+                const dot = document.getElementById('connectionDot');
+                const btn = document.getElementById('btnConnect');
+                if(isConnected) {
+                    dot.className = 'w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]';
+                    btn.className = 'bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-4 py-1.5 rounded transition-all shadow-lg shadow-blue-900/20';
+                    btn.innerText = 'ĐÃ KẾT NỐI';
+                } else {
+                    dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse';
+                    btn.className = 'bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded transition-all shadow-lg shadow-blue-900/20';
+                    btn.innerText = 'KẾT NỐI';
+                }
+            }
+
+            updateVol(val) {
+                const slider = document.getElementById('volSlider');
+                const text = document.getElementById('volText');
+                if(slider) slider.value = val;
+                if(text) text.innerText = `Mức ${val}`;
+            }
+
+            showAudioTab(tab) {
+                const isEq = tab === 'eq';
+                document.getElementById('panel-eq').className = `space-y-4 ${isEq ? '' : 'hidden'}`;
+                document.getElementById('panel-surround').className = `space-y-4 py-2 ${isEq ? 'hidden' : ''}`;
+                const activeClass = 'tab-btn active px-3 py-1 rounded text-xs font-medium transition-all';
+                const inactiveClass = 'tab-btn px-3 py-1 rounded text-xs font-medium text-slate-400 hover:text-white transition-all';
+                document.getElementById('tab-eq').className = isEq ? activeClass : inactiveClass;
+                document.getElementById('tab-surround').className = isEq ? inactiveClass : activeClass;
+            }
+
+            showLightTab(tab) {
+                const isMain = tab === 'main';
+                document.getElementById('lpanel-main').className = `space-y-4 ${isMain ? '' : 'hidden'}`;
+                document.getElementById('lpanel-edge').className = `space-y-4 ${isMain ? 'hidden' : ''}`;
+                const activeBtn = 'flex-1 py-1.5 rounded text-xs font-medium bg-blue-600 text-white transition-all shadow';
+                const inactiveBtn = 'flex-1 py-1.5 rounded text-xs font-medium text-slate-400 hover:text-white transition-all';
+                document.getElementById('ltab-main').className = isMain ? activeBtn : inactiveBtn;
+                document.getElementById('ltab-edge').className = isMain ? inactiveBtn : activeBtn;
+            }
+        }
+
+        // --- MAIN APP ---
+        class App {
+            constructor() {
+                this.connection = new SpeakerConnection();
+                this.control = new SpeakerControl(this.connection);
+                this.ui = new AppUI();
+                
+                // Bindings
+                document.getElementById('btnConnect').onclick = () => this.connect();
+                document.getElementById('btnScanIP').onclick = () => this.scanIP();
+                document.getElementById('btnAutoConnect').onclick = () => this.toggleAutoConnect();
+                document.getElementById('ipInput').value = localStorage.getItem('r1_ip') || '';
+                
+                // Auto-scan and connect on load
+                this.initAutoScan();
+            }
+
+            initAutoScan() {
+                // Tự động connect với IP hiện tại (từ window.location)
+                const currentIP = window.location.hostname || 'localhost';
+                setTimeout(() => {
+                    Logger.log(`Auto-connecting to ${currentIP}...`);
+                    document.getElementById('ipInput').value = currentIP;
+                    this.connection.connect(currentIP);
+                }, 500);
+            }
+
+            async autoScanSubnet() {
+                const timeout = 1000; // Faster timeout
+                const maxRetries = 2;
+                const batchSize = 30; // Parallel requests
+                
+                Logger.log('Auto-scanning 192.168.1.0-255 for R1 speaker...');
+
+                for(let retry = 0; retry < maxRetries; retry++) {
+                    if(retry > 0) {
+                        Logger.log(`Retry ${retry}/${maxRetries-1}: Scanning again...`);
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                    }
+
+                    // Batch scan 192.168.1.0-255
+                    for(let start = 0; start <= 255; start += batchSize) {
+                        const end = Math.min(start + batchSize - 1, 255);
+                        const promises = [];
+                        
+                        for(let ip = start; ip <= end; ip++) {
+                            const testIP = `192.168.1.${ip}`;
+                            promises.push(
+                                Promise.race([
+                                    fetch(`http://${testIP}:8080/`, {mode: 'no-cors'})
+                                        .then(r => r ? testIP : null)
+                                        .catch(() => null),
+                                    new Promise(resolve => setTimeout(() => resolve(null), timeout))
+                                ])
+                            );
+                        }
+                        
+                        // Log progress
+                        Logger.log(`Scanning ${start}-${end}...`);
+                        
+                        const results = await Promise.all(promises);
+                        const foundIP = results.find(ip => ip !== null);
+                        
+                        if(foundIP) {
+                            document.getElementById('ipInput').value = foundIP;
+                            Logger.log(`✓ Found R1 at ${foundIP}!`, 'info');
+                            this.connection.autoConnectEnabled = true;
+                            localStorage.setItem('r1_autoConnect', 'true');
+                            localStorage.setItem('r1_ip', foundIP);
+                            this.connection.connect(foundIP);
+                            this.updateAutoConnectButton();
+                            return;
+                        }
+                    }
+                }
+
+                Logger.log('No R1 speaker found after scanning. Check network and try manual IP.', 'error');
+            }
+
+            connect() {
+                let ip = document.getElementById('ipInput').value.trim();
+                // Nếu không có IP, dùng IP hiện tại
+                if (!ip) {
+                    ip = window.location.hostname || 'localhost';
+                    document.getElementById('ipInput').value = ip;
+                }
+                // Validate IP format (simple check)
+                if(!ip || !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+                    Logger.log('Invalid IP format. Use: 192.168.1.100', 'error');
+                    return;
+                }
+                localStorage.setItem('r1_ip', ip);
+                this.connection.connect(ip);
+            }
+
+            toggleAutoConnect() {
+                const enabled = !this.connection.autoConnectEnabled;
+                this.connection.autoConnectEnabled = enabled;
+                localStorage.setItem('r1_autoConnect', enabled ? 'true' : 'false');
+                this.updateAutoConnectButton();
+                Logger.log(`Auto-connect ${enabled ? 'enabled' : 'disabled'}`);
+                
+                if(enabled && !this.connection.isConnected) {
+                    const ip = document.getElementById('ipInput').value;
+                    if(ip) {
+                        this.connection.connect(ip);
+                    } else {
+                        Logger.log('No IP configured for auto-connect', 'error');
+                    }
+                }
+            }
+
+            updateAutoConnectButton() {
+                const btn = document.getElementById('btnAutoConnect');
+                const status = document.getElementById('autoConnectStatus');
+                if(this.connection.autoConnectEnabled) {
+                    btn.className = 'bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded transition-all shadow-lg shadow-green-900/20';
+                    status.innerText = '✓ Auto';
+                } else {
+                    btn.className = 'bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-1.5 rounded transition-all shadow-lg shadow-blue-900/20';
+                    status.innerText = '';
+                }
+            }
+
+            async scanIP() {
+                const btn = document.getElementById('btnScanIP');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                Logger.log('Manual scan: 192.168.1.0-255 for R1 speaker...');
+
+                const timeout = 1000; // Faster timeout
+                const maxRetries = 2;
+                const batchSize = 30; // Parallel requests
+                
+                for(let retry = 0; retry < maxRetries; retry++) {
+                    if(retry > 0) {
+                        Logger.log(`Retry ${retry}/${maxRetries-1}: Scanning again...`);
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                    }
+
+                    // Batch scan 192.168.1.0-255
+                    for(let start = 0; start <= 255; start += batchSize) {
+                        const end = Math.min(start + batchSize - 1, 255);
+                        const promises = [];
+                        
+                        for(let ip = start; ip <= end; ip++) {
+                            const testIP = `192.168.1.${ip}`;
+                            promises.push(
+                                Promise.race([
+                                    fetch(`http://${testIP}:8080/`, {mode: 'no-cors'})
+                                        .then(r => r ? testIP : null)
+                                        .catch(() => null),
+                                    new Promise(resolve => setTimeout(() => resolve(null), timeout))
+                                ])
+                            );
+                        }
+                        
+                        // Log progress
+                        Logger.log(`Scanning ${start}-${end}...`);
+                        
+                        const results = await Promise.all(promises);
+                        const foundIP = results.find(ip => ip !== null);
+                        
+                        if(foundIP) {
+                            document.getElementById('ipInput').value = foundIP;
+                            Logger.log(`✓ Found R1 at ${foundIP}!`, 'info');
+                            localStorage.setItem('r1_ip', foundIP);
+                            this.connection.connect(foundIP);
+                            btn.disabled = false;
+                            btn.innerHTML = originalText;
+                            return;
+                        }
+                    }
+                }
+
+                Logger.log('Scan complete: No R1 found. Check IP manually or verify network.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+
+            updateState(data) {
+                if(data.vol !== undefined) this.ui.updateVol(data.vol);
+                
+                const info = data.music_info || {};
+                const title = info.title || (data.play_state ? "Đang phát..." : "Không có nhạc");
+                const artist = info.artist || "---";
+                
+                document.getElementById('trackTitle').innerText = title;
+                document.getElementById('trackArtist').innerText = artist;
+                
+                // Play State Sync
+                this.control.state.isPlaying = !!data.play_state;
+                this.control.updatePlayButtonUI();
+
+                let source = "IDLE";
+                if(data.dlna_open) source = "DLNA";
+                if(data.airplay_open) source = "AIRPLAY";
+                if(data.device_state === 3) source = "BLUETOOTH";
+                document.getElementById('sourceBadge').innerText = source;
+            }
+            
+            updateEqState(data) { /* Sync if needed */ }
+
+            updateSystemStats(rawText) {
+                if (!rawText) return;
+                
+                // Robust Parsing Logic (No explicit split needed)
+                // 1. Memory
+                const matchVal = (key, text) => {
+                    const re = new RegExp(`${key}:\\s+(\\d+)`);
+                    const m = text.match(re);
+                    return m ? parseInt(m[1]) : 0;
+                };
+
+                const memTotal = matchVal('MemTotal', rawText);
+                const memFree = matchVal('MemFree', rawText);
+                const memBuffers = matchVal('Buffers', rawText);
+                const memCached = matchVal('Cached', rawText);
+
+                if (memTotal > 0) {
+                    const usedRam = memTotal - (memFree + memBuffers + memCached);
+                    const ramPercent = Math.round((usedRam / memTotal) * 100) || 0;
+                    
+                    const ramBar = document.getElementById('ramBar');
+                    const ramText = document.getElementById('ramText');
+                    
+                    if(ramBar) {
+                        ramBar.style.width = `${ramPercent}%`;
+                        ramBar.className = `h-full transition-all duration-500 ${ramPercent > 80 ? 'bg-red-500' : 'bg-blue-500'}`;
+                    }
+                    if(ramText) ramText.innerText = `${ramPercent}%`;
+                }
+
+                // 2. CPU
+                // Find line starting with "cpu " (multi-line supported)
+                const cpuMatch = rawText.match(/^cpu\s+(.+)$/m);
+                if(cpuMatch) {
+                    const parts = cpuMatch[1].trim().split(/\s+/).map(n => parseInt(n));
+                    if(parts.length >= 7) {
+                        // user + nice + system + idle + iowait + irq + softirq
+                        const idle = parts[3];
+                        const total = parts.reduce((a, b) => a + b, 0);
+                        
+                        if(this.ui.lastCpu) {
+                            const dIdle = idle - this.ui.lastCpu.idle;
+                            const dTotal = total - this.ui.lastCpu.total;
+                            const usage = dTotal > 0 ? Math.round(100 - (dIdle / dTotal * 100)) : 0;
+                            
+                            const cpuBar = document.getElementById('cpuBar');
+                            const cpuText = document.getElementById('cpuText');
+                            
+                            if(cpuBar) cpuBar.style.width = `${usage}%`;
+                            if(cpuText) cpuText.innerText = `${usage}%`;
+                        }
+                        this.ui.lastCpu = { idle, total };
+                    }
+                }
+            }
+
+            async playMusicInput() {
+                const q = document.getElementById('musicQuery').value.trim();
+                if (!q) return;
+                
+                Logger.log(`Searching YouTube: ${q}...`);
+                try {
+                    // Search YouTube
+                    const response = await this.connection.send({type: 'youtube_search', query: q});
+                    if (response && response.success) {
+                        Logger.log(`Found: ${response.title} by ${response.channel}`, 'info');
+                        // Update UI với thumbnail
+                        this.updateYouTubeInfo(response);
+                        // Auto play
+                        this.control.playYouTube(response.audio_url, response.title, response.channel);
+                    } else {
+                        Logger.log(`Search failed: ${response ? response.message : 'Unknown error'}`, 'error');
+                    }
+                } catch(e) {
+                    Logger.log(`Search error: ${e.message}`, 'error');
+                }
+            }
+            
+            updateYouTubeInfo(data) {
+                // Update title và artist
+                document.getElementById('trackTitle').textContent = data.title || 'Không có nhạc';
+                document.getElementById('trackArtist').textContent = data.channel || '---';
+                
+                // Update thumbnail
+                if (data.thumbnail) {
+                    const thumbImg = document.getElementById('albumArtThumb');
+                    const bgImg = document.getElementById('albumArtImg');
+                    const defaultBg = document.getElementById('defaultBg');
+                    const musicIcon = document.getElementById('musicIcon');
+                    
+                    if (thumbImg) {
+                        thumbImg.src = data.thumbnail;
+                        thumbImg.classList.remove('hidden');
+                        musicIcon.classList.add('hidden');
+                    }
+                    if (bgImg) {
+                        bgImg.src = data.thumbnail;
+                        bgImg.classList.remove('hidden');
+                        if (defaultBg) defaultBg.classList.add('hidden');
+                    }
+                }
+                
+                // Update source badge
+                const badge = document.getElementById('sourceBadge');
+                if (badge) {
+                    badge.textContent = 'YouTube';
+                    badge.className = 'text-[10px] font-bold bg-red-600/40 px-2 py-1 rounded border border-red-500/30 text-red-300';
+                }
+            }
+            speakInput() {
+                const q = document.getElementById('ttsInput').value;
+                if(q) this.control.conn.send({type:'send_message', what: 65536, obj: q});
+            }
+            runShell() {
+                const q = document.getElementById('shellInput').value;
+                if(q) { 
+                    this.control.shell(q); 
+                    Logger.log(`$ ${q}`, 'sent');
+                    document.getElementById('shellInput').value = '';
+                }
+            }
+        }
+
+        const app = new App();
+        // Initialize UI
+        setTimeout(() => {
+            app.ui.setConnectionState(app.connection.isConnected);
+            if(app && app.updateAutoConnectButton) {
+                app.updateAutoConnectButton();
+            }
+        }, 100);
+    </script>
+    
+    <!-- Footer -->
+    <footer class="mt-8 py-4 text-center border-t border-slate-800/50">
+        <div class="glass-panel rounded-lg p-4 mx-4 mb-4">
+            <p class="text-slate-400 text-xs mb-2">
+                © 2025 <span class="text-blue-400 font-semibold"><a href="https://thaovycomputer.com">THAOVYCOMPUTER.COM</a></span>. All rights reserved.
+            </p>
+            <p class="text-slate-500 text-[10px]">
+                Special thanks to <span class="text-slate-300">Trần Tiến</span> and <span class="text-slate-300">Bùi Thanh Xuân</span>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

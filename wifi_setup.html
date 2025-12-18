@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>THAOVYCOMPUTER.COM - Cấu hình Wi-Fi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* =========================================
+           THEME CONFIGURATION
+           ========================================= */
+        :root {
+            /* Light Mode */
+            --bg-body: #f4f7fe;
+            --bg-card: #ffffff;
+            --text-main: #2b3674;
+            --text-secondary: #a3aed0;
+            --primary: #4318ff;
+            --border-color: #e0e5f2;
+            --input-bg: #f4f7fe;
+            --shadow-card: 0px 18px 40px rgba(112, 144, 176, 0.12);
+            --success: #05cd99;
+            --warning: #ffb547;
+            --danger: #ee5d50;
+            --font-family: 'Inter', sans-serif;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Mode */
+            --bg-body: #0b1437;
+            --bg-card: #111c44;
+            --text-main: #ffffff;
+            --text-secondary: #8f9bba;
+            --primary: #7551ff;
+            --border-color: #2b3674;
+            --input-bg: #0b1437;
+            --shadow-card: 0px 18px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        /* =========================================
+           GLOBAL STYLES
+           ========================================= */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            transition: background 0.3s ease, color 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* =========================================
+           TOP BAR (Controls only)
+           ========================================= */
+        .topbar {
+            padding: 16px 24px;
+            display: flex;
+            justify-content: flex-end; /* Push controls to right */
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            /* background: transparent; Removed background for cleaner look */
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            padding: 8px 16px;
+            border-radius: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .lang-badge {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding-right: 12px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .theme-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: none;
+            background: none;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* =========================================
+           MAIN BRANDING (Moved Here)
+           ========================================= */
+        .brand-section {
+            padding: 0 0 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-logo {
+            width: 54px;
+            height: 54px;
+            /* Purple Gradient like image */
+            background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
+            flex-shrink: 0;
+        }
+
+        .brand-text {
+            font-size: 26px;
+            font-weight: 800;
+            /* Cyan color like image */
+            color: #00B2FF; 
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* =========================================
+           MAIN LAYOUT
+           ========================================= */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px 24px 24px;
+            width: 100%;
+            flex: 1;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1.3fr 0.7fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--shadow-card);
+            height: fit-content;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 20px;
+        }
+
+        /* =========================================
+           FORMS & INPUTS
+           ========================================= */
+        .form-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-group { flex: 1; }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            background: var(--bg-card);
+            box-shadow: 0 0 0 4px rgba(67, 24, 255, 0.1);
+        }
+
+        .password-wrap { position: relative; }
+        .password-toggle {
+            position: absolute;
+            right: 0; top: 0; height: 100%;
+            padding: 0 14px;
+            background: none; border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            float: right;
+            transition: transform 0.2s;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(67, 24, 255, 0.3);
+        }
+        .btn-primary:active { transform: scale(0.98); }
+
+        /* =========================================
+           NETWORK LISTS
+           ========================================= */
+        .scan-container {
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .list-header {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .refresh-link {
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            border: none;
+            background: none;
+            padding: 8px;
+        }
+
+        .network-list-box {
+            background: var(--input-bg);
+            border-radius: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .network-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .network-item:last-child { border-bottom: none; }
+        .network-item:active { background: rgba(67, 24, 255, 0.05); }
+        .network-item.selected {
+            background: rgba(67, 24, 255, 0.1);
+            border-left: 3px solid var(--primary);
+        }
+
+        .wifi-icon { margin-right: 12px; color: var(--text-secondary); width: 20px; height: 20px; }
+        .item-info { flex: 1; }
+        .item-ssid { font-weight: 600; font-size: 14px; color: var(--text-main); margin-bottom: 2px; }
+        .item-signal { font-size: 11px; color: var(--text-secondary); }
+        .lock-icon { width: 14px; color: var(--warning); }
+
+        /* Saved Networks */
+        .saved-item {
+            background: var(--input-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .saved-ssid {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 60%;
+        }
+        .action-group { display: flex; gap: 8px; }
+        .btn-mini {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-conn { background: rgba(5, 205, 153, 0.15); color: var(--success); }
+        .btn-del { background: rgba(238, 93, 80, 0.15); color: var(--danger); }
+
+        /* Status Bar */
+        .status-bar {
+            margin: -24px -24px 24px -24px;
+            background: rgba(67, 24, 255, 0.05);
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-main);
+            border-radius: 20px 20px 0 0;
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+        .status-dot.disconnected { background: var(--warning); }
+
+        /* Helpers */
+        .hidden { display: none !important; }
+        .empty-state { padding: 30px; text-align: center; color: var(--text-secondary); font-size: 13px; }
+        
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            z-index: 999; display: none;
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .loading-overlay.show { display: flex; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { color: white; font-weight: 600; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333; color: white;
+            padding: 12px 24px; border-radius: 30px;
+            font-size: 14px; z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: var(--success); color: #000; }
+        .toast.error { background: var(--danger); }
+
+        /* =========================================
+           MOBILE RESPONSIVE RULES
+           ========================================= */
+        @media (max-width: 900px) {
+            .grid-layout { grid-template-columns: 1fr; gap: 16px; }
+            .container { padding: 0 16px 24px 16px; }
+            .card { padding: 16px; border-radius: 16px; }
+            .status-bar { margin: -16px -16px 16px -16px; padding: 12px 16px; border-radius: 16px 16px 0 0; }
+            .brand-section { padding-bottom: 16px; }
+        }
+
+        @media (max-width: 600px) {
+            .topbar { padding: 12px 16px; }
+            .lang-badge { display: none; }
+            .brand-logo { width: 42px; height: 42px; }
+            .brand-text { font-size: 20px; }
+            .form-row { flex-direction: column; gap: 16px; }
+            .btn-primary { float: none; width: 100%; display: block; text-align: center; margin-top: 8px; padding: 16px; font-size: 16px; }
+            .saved-item { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .saved-ssid { max-width: 100%; font-size: 15px; }
+            .action-group { width: 100%; display: flex; gap: 10px; }
+            .btn-mini { flex: 1; padding: 12px; text-align: center; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <div class="controls">
+            <div class="lang-badge">🇻🇳 Tiếng Việt</div>
+            <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀️</button>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <div class="brand-section">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            </div>
+            <span class="brand-text">THAOVYCOMPUTER.COM</span>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="card">
+                <div class="status-bar">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Đang khởi tạo hệ thống...</span>
+                </div>
+
+                <div class="card-title">Wi-Fi mới</div>
+                
+                <form onsubmit="submitManualWifi(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">SSID (Tên mạng)</label>
+                            <input type="text" id="manualSsid" class="form-input" placeholder="Nhập hoặc chọn bên dưới..." required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Mật khẩu</label>
+                            <div class="password-wrap">
+                                <input type="password" id="manualPassword" class="form-input" placeholder="Nhập mật khẩu...">
+                                <button type="button" class="password-toggle" onclick="toggleManualPassword()">👁</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="overflow: hidden; margin-bottom: 20px;">
+                        <button type="submit" class="btn-primary">Kết nối ngay</button>
+                    </div>
+                </form>
+
+                <div class="scan-container">
+                    <div class="list-header">
+                        <span>Chọn Wi-Fi 2.4G từ danh sách:</span>
+                        <button class="refresh-link" onclick="scanNetworks()">↻ Làm mới</button>
+                    </div>
+                    <div class="network-list-box" id="networkList">
+                        <div class="empty-state">
+                            <div class="spinner" style="width: 24px; height: 24px; border-color: #ccc; border-top-color: #666; margin: 0 auto 10px;"></div>
+                            Đang quét mạng Wi-Fi...
+                        </div>
+                    </div>
+                </div>
+
+                <div id="passwordSection" class="hidden">
+                    <input type="password" id="password">
+                    <span id="selectedNetworkName"></span>
+                    <button id="connectBtn"></button>
+                </div>
+                <div id="manualEntry" class="hidden"></div> 
+            </div>
+
+            <div class="card">
+                <div class="card-title">Wi-Fi đã lưu</div>
+                <div id="savedSection">
+                    <div id="savedList">
+                        <div class="empty-state">Chưa có mạng nào được lưu</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Đang xử lý...</div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Theme Toggle Logic
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('themeBtn');
+            const isDark = body.getAttribute('data-theme') === 'dark';
+            
+            if (isDark) {
+                body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                btn.textContent = '☀️';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                btn.textContent = '🌙';
+            }
+        }
+
+        // Initialize Theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            document.getElementById('themeBtn').textContent = '🌙';
+        }
+
+        // ==========================================
+        // ORIGINAL WIFI LOGIC
+        // ==========================================
+        let selectedNetwork = null;
+        let networks = [];
+        let savedNetworks = [];
+        
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+        
+        function showLoading(text = 'Đang xử lý...') {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+        
+        function getSignalIcon(rssi) {
+            return `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>`;
+        }
+        
+        function scanNetworks() {
+            const list = document.getElementById('networkList');
+            list.innerHTML = `
+                <div class="empty-state">
+                    <div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0 auto 10px;border-color:#ccc;border-top-color:#333"></div>
+                    Đang quét...
+                </div>`;
+            document.getElementById('statusText').textContent = 'Đang quét mạng Wi-Fi...';
+            
+            fetch('/scan')
+                .then(response => response.json())
+                .then(data => {
+                    networks = data.networks || [];
+                    renderNetworks();
+                    if (networks.length > 0) {
+                        document.getElementById('statusText').textContent = `Tìm thấy ${networks.length} mạng Wi-Fi`;
+                    } else {
+                        document.getElementById('statusText').textContent = 'Không tìm thấy mạng. Hãy nhập thủ công.';
+                    }
+                    document.getElementById('statusDot').classList.remove('disconnected');
+                })
+                .catch(err => {
+                    console.error('Scan error:', err);
+                    list.innerHTML = `<div class="empty-state" style="color:var(--danger)">Lỗi quét mạng!</div>`;
+                    showToast('Lỗi quét mạng WiFi', 'error');
+                });
+        }
+        
+        function renderNetworks() {
+            const list = document.getElementById('networkList');
+            if (networks.length === 0) {
+                list.innerHTML = `<div class="empty-state">Không tìm thấy mạng khả dụng</div>`;
+                return;
+            }
+            
+            list.innerHTML = networks.map(network => `
+                <div class="network-item ${selectedNetwork && selectedNetwork.ssid === network.ssid ? 'selected' : ''}" 
+                     onclick="selectNetwork('${escapeHtml(network.ssid)}', ${network.secured})">
+                    <div class="wifi-icon">${getSignalIcon(network.rssi)}</div>
+                    <div class="item-info">
+                        <div class="item-ssid">${escapeHtml(network.ssid)}</div>
+                        <div class="item-signal">${network.rssi} dBm</div>
+                    </div>
+                    ${network.secured ? '<svg class="lock-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>' : ''}
+                </div>
+            `).join('');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function selectNetwork(ssid, secured) {
+            selectedNetwork = { ssid, secured };
+            document.querySelectorAll('.network-item').forEach(item => item.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            
+            // Auto fill manual form
+            document.getElementById('manualSsid').value = ssid;
+            document.getElementById('manualPassword').value = '';
+            document.getElementById('manualPassword').focus();
+            
+            // Also update hidden fields for compatibility
+            document.getElementById('selectedNetworkName').textContent = ssid;
+            document.getElementById('password').value = '';
+        }
+        
+        function cancelSelection() {
+            selectedNetwork = null;
+            document.querySelectorAll('.network-item').forEach(item => item.classList.remove('selected'));
+        }
+        
+        // This handles the main form toggle (eye icon)
+        function toggleManualPassword() {
+            const input = document.getElementById('manualPassword');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+        // Compatibility for hidden form
+        function togglePassword() {
+            const input = document.getElementById('password');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // Unified Submit Function
+        function submitManualWifi(event) {
+            event.preventDefault();
+            const ssid = document.getElementById('manualSsid').value;
+            const password = document.getElementById('manualPassword').value;
+            submitConnection(ssid, password);
+        }
+        
+        function submitConnection(ssid, password) {
+            if(!ssid) { showToast('Vui lòng nhập tên mạng', 'error'); return; }
+            showLoading('Đang kết nối đến ' + ssid + '...');
+            
+            fetch('/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ssid: ssid, password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showToast('Đã gửi lệnh kết nối!', 'success');
+                    cancelSelection();
+                    document.getElementById('statusText').textContent = 'Đang kết nối đến ' + ssid + '...';
+                    document.getElementById('statusDot').classList.add('disconnected');
+                    setTimeout(() => { showToast('Đang đợi thiết bị kết nối...', 'info'); }, 1500);
+                } else {
+                    showToast(data.error || 'Lỗi kết nối WiFi', 'error');
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                console.error('Connect error:', err);
+                showToast('Thiết bị đang chuyển mạng...', 'success');
+                document.getElementById('statusText').textContent = 'Đang kết nối WiFi mới...';
+                document.getElementById('statusDot').classList.add('disconnected');
+            });
+        }
+        
+        function loadSavedNetworks() {
+            fetch('/saved')
+                .then(response => response.json())
+                .then(data => {
+                    savedNetworks = data.networks || [];
+                    renderSavedNetworks();
+                })
+                .catch(err => console.error('Load saved error:', err));
+        }
+        
+        function renderSavedNetworks() {
+            const list = document.getElementById('savedList');
+            if (savedNetworks.length === 0) {
+                list.innerHTML = `<div class="empty-state">Chưa có mạng nào được lưu</div>`;
+                return;
+            }
+            list.innerHTML = savedNetworks.map(network => `
+                <div class="saved-item">
+                    <div class="saved-ssid">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                        ${escapeHtml(network.ssid)}
+                    </div>
+                    <div class="action-group">
+                        <button class="btn-mini btn-conn" onclick="connectSaved('${escapeHtml(network.ssid)}')">Kết nối</button>
+                        <button class="btn-mini btn-del" onclick="deleteSaved('${escapeHtml(network.ssid)}')">Xóa</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function connectSaved(ssid) {
+            showLoading('Đang kết nối lại ' + ssid + '...');
+            fetch('/connect-saved', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ssid: ssid })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showToast('Đang kết nối...', 'success');
+                    document.getElementById('statusText').textContent = 'Đang kết nối lại ' + ssid + '...';
+                } else {
+                    showToast(data.error || 'Lỗi kết nối', 'error');
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                showToast('Thiết bị đang chuyển mạng...', 'success');
+            });
+        }
+        
+        function deleteSaved(ssid) {
+            if (!confirm('Xóa mạng ' + ssid + '?')) return;
+            fetch('/saved/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ssid: ssid })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Đã xóa mạng', 'success');
+                    loadSavedNetworks();
+                } else {
+                    showToast('Lỗi xóa mạng', 'error');
+                }
+            })
+            .catch(err => showToast('Lỗi xóa mạng', 'error'));
+        }
+        
+        // Initial Load
+        document.addEventListener('DOMContentLoaded', function() {
+            scanNetworks();
+            loadSavedNetworks();
+            setInterval(scanNetworks, 30000);
+        });
+    </script>
+</body>
+</html>
